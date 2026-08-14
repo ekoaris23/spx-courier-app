@@ -4,6 +4,8 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>SPX PAKET GASKEUN 🛵🏍️</title>
+    <!-- Library Tesseract.js untuk OCR (Pembacaan Teks dari Gambar) -->
+    <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
     <style>
         :root {
             --primary: #ee4d2d;
@@ -131,6 +133,38 @@
 
         .form-control:focus {
             border-color: var(--primary);
+        }
+
+        /* Upload Area Styling */
+        .upload-box {
+            border: 2px dashed var(--primary);
+            background: #fff5f2;
+            padding: 20px;
+            text-align: center;
+            border-radius: 8px;
+            cursor: pointer;
+            margin-bottom: 15px;
+            transition: background 0.2s;
+        }
+
+        .upload-box:hover {
+            background: #ffebe6;
+        }
+
+        .upload-box p {
+            font-size: 0.9rem;
+            color: var(--primary);
+            font-weight: 600;
+            margin-top: 5px;
+        }
+
+        .loading-ocr {
+            display: none;
+            text-align: center;
+            padding: 10px;
+            color: var(--primary-dark);
+            font-weight: bold;
+            font-size: 0.9rem;
         }
 
         .btn {
@@ -295,6 +329,17 @@
         <div id="inputTab" class="tab-content active">
             <div class="card">
                 <h2>Form Input Paket SPX</h2>
+
+                <!-- UPLOAD SCREENSHOT SCANNER FITUR BARU -->
+                <div class="upload-box" onclick="document.getElementById('screenshotInput').click()">
+                    <span style="font-size: 2rem;">📸</span>
+                    <p>Upload / Ambil Screenshot SPX untuk Auto Scan</p>
+                    <input type="file" id="screenshotInput" accept="image/*" style="display: none;" onchange="handleScreenshotUpload(event)">
+                </div>
+
+                <div id="ocrLoading" class="loading-ocr">
+                    ⏳ Membaca data dari Screenshot... Mohon tunggu sebentar.
+                </div>
                 
                 <div class="form-group">
                     <label>Tanggal Input</label>
@@ -326,7 +371,7 @@
 
                 <div class="form-group">
                     <label>ID Paket / No Resi SPX</label>
-                    <input type="text" id="inputIdPaket" class="form-control" placeholder="Tempel hasil copy dari SPX atau Scan Barcode...">
+                    <input type="text" id="inputIdPaket" class="form-control" placeholder="Terisi otomatis dari Foto atau Tempel No Resi...">
                 </div>
 
                 <div class="form-group">
@@ -386,7 +431,7 @@
                         </div>
                     </div>
 
-                    <!-- Card 4: Assigned Hub (Dinamis Sesuai Desa yang Dipilih) -->
+                    <!-- Card 4: Assigned Hub -->
                     <div class="spx-card">
                         <div class="spx-hub-row">
                             <span style="font-weight: 700; color: var(--text-dark);">Assigned Hub</span>
@@ -572,6 +617,72 @@
             btnElement.classList.add('active');
         }
 
+        // FITUR OCR MEMBACA SCREENSHOT SPX EXPRESS AUTOMATIS
+        function handleScreenshotUpload(event) {
+            let file = event.target.files[0];
+            if (!file) return;
+
+            let loading = document.getElementById('ocrLoading');
+            loading.style.display = 'block';
+
+            Tesseract.recognize(
+                file,
+                'ind+eng',
+                { logger: m => console.log(m) }
+            ).then(({ data: { text } }) => {
+                loading.style.display = 'none';
+                parseSpxOcrText(text);
+            }).catch(err => {
+                loading.style.display = 'none';
+                alert("Gagal membaca teks dari gambar. Silakan input manual.");
+                console.error(err);
+            });
+        }
+
+        // PARSER TEKS HASIL OCR SCREENSHOT
+        function parseSpxOcrText(text) {
+            console.log("Teks OCR Raw:", text);
+
+            // 1. Ekstrak Resi (Mencari teks SPXID / ID Resi)
+            let resiMatch = text.match(/SPXID[A-Z0-9]+/i) || text.match(/SPX[A-Z0-9]+/i);
+            if (resiMatch) {
+                document.getElementById('inputIdPaket').value = resiMatch[0];
+            }
+
+            // 2. Ekstrak Desa
+            let desaList = ["Cikeruh", "Cilayung", "Cileles", "Cipacing", "Cisempur", "Hegarmanah", "Jatimukti", "Jatiroke", "Mekargalih", "Sayang", "Cibeusi", "Cintamulya"];
+            for (let d of desaList) {
+                let reg = new RegExp(d, 'i');
+                if (reg.test(text)) {
+                    document.getElementById('inputDesa').value = d;
+                    break;
+                }
+            }
+
+            // 3. Ekstrak Penerima (Mencari teks setelah Receiver Information)
+            let lines = text.split('\n').map(l => l.trim()).filter(l => l.length > 0);
+            for (let i = 0; i < lines.length; i++) {
+                if (lines[i].toLowerCase().includes("receiver") && lines[i+1]) {
+                    let possibleName = lines[i+1].replace(/[^a-zA-Z\s]/g, '').trim();
+                    if (possibleName.length > 2) {
+                        document.getElementById('inputReceiver').value = possibleName;
+                    }
+                    break;
+                }
+            }
+
+            // 4. Ekstrak Detail Alamat (Baris setelah Resi)
+            if (lines.length > 1) {
+                let addrLine = lines.find(l => l.toLowerCase().includes("dsn") || l.toLowerCase().includes("rt") || l.toLowerCase().includes("rw") || l.toLowerCase().includes("jl"));
+                if (addrLine) {
+                    document.getElementById('inputAddressDetail').value = addrLine;
+                }
+            }
+
+            alert("Keren! Data berhasil di-scan otomatis dari Screenshot SPX.");
+            processInputPaket();
+        }
+
         function processInputPaket() {
             let resi = document.getElementById('inputIdPaket').value.trim();
             let desa = document.getElementById('inputDesa').value;
@@ -579,7 +690,7 @@
             let receiver = document.getElementById('inputReceiver').value.trim() || 'Penerima Paket';
 
             if (!resi) {
-                alert("Mohon isi atau tempel ID Paket / No Resi SPX!");
+                alert("Mohon isi atau upload screenshot ID Paket / No Resi SPX!");
                 return;
             }
 
