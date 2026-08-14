@@ -23,7 +23,7 @@
             box-sizing: border-box;
             margin: 0;
             padding: 0;
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
         }
 
         body {
@@ -47,8 +47,8 @@
         }
 
         header p {
-            font-size: 0.9rem;
-            opacity: 0.9;
+            font-size: 0.85rem;
+            opacity: 0.95;
         }
 
         .container {
@@ -180,6 +180,50 @@
             font-weight: 600;
         }
 
+        /* SPX Original Card Format Component */
+        .spx-detail-container {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            margin-top: 15px;
+        }
+
+        .spx-card {
+            background: #ffffff;
+            border-radius: 10px;
+            padding: 16px;
+            border: 1px solid var(--border);
+            box-shadow: 0 2px 6px rgba(0,0,0,0.03);
+        }
+
+        .spx-card-title {
+            font-size: 1rem;
+            font-weight: 700;
+            color: var(--text-dark);
+            margin-bottom: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .spx-resi-header {
+            font-size: 1.2rem;
+            font-weight: 800;
+            letter-spacing: 0.5px;
+        }
+
+        .spx-address-text {
+            font-size: 0.95rem;
+            color: #4a5568;
+            line-height: 1.4;
+        }
+
+        .spx-hub-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
         /* Badges */
         .badge {
             display: inline-block;
@@ -193,21 +237,6 @@
         .badge-reg { background-color: var(--info); }
         .badge-cod { background-color: var(--warning); color: #333; }
         .badge-cek { background-color: var(--primary); }
-
-        /* Checklist Requirement Display */
-        .proof-checklist {
-            background: #f8fafc;
-            border-left: 4px solid var(--primary);
-            padding: 12px;
-            margin-top: 10px;
-            border-radius: 0 6px 6px 0;
-            font-size: 0.85rem;
-        }
-
-        .proof-checklist ul {
-            margin-left: 20px;
-            margin-top: 5px;
-        }
 
         /* Tab Visibility Control */
         .tab-content {
@@ -256,46 +285,118 @@
         
         <!-- Navigation Bar -->
         <div class="step-nav">
-            <button class="step-btn active" onclick="switchTab('hubTab', this)">1-3. Hub & Pickup</button>
+            <button class="step-btn active" onclick="switchTab('inputTab', this)">Input Paket</button>
             <button class="step-btn" onclick="switchTab('basecampTab', this)">4-7. Serah Terima & Sortir</button>
             <button class="step-btn" onclick="switchTab('manifestTab', this)">8-9. Manifest Rider</button>
             <button class="step-btn" onclick="switchTab('waTab', this)">10-12. WA Verification & Loop</button>
         </div>
 
-        <!-- TAB 1: Hub & Loading -->
-        <div id="hubTab" class="tab-content active">
+        <!-- TAB 1: Input Paket -->
+        <div id="inputTab" class="tab-content active">
             <div class="card">
-                <h2>1. Penjemputan Hub (Driver Mobil)</h2>
+                <h2>Form Input Paket SPX</h2>
+                
                 <div class="form-group">
-                    <label>Jadwal Penjemputan Leader</label>
-                    <input type="text" class="form-control" value="Sesi Pagi - 07:30 WIB (Hub Utama)" readonly>
+                    <label>Tanggal Input</label>
+                    <input type="date" id="inputDate" class="form-control">
                 </div>
+
                 <div class="form-group">
-                    <label>Scan Resi / Barcode Paket Hub</label>
-                    <input type="text" id="hubScanInput" class="form-control" placeholder="Arahkan Scanner / Ketik No Resi SPX...">
+                    <label>Kecamatan</label>
+                    <input type="text" class="form-control" value="Jatinangor" readonly style="background-color: #e9ecef; cursor: not-allowed;">
                 </div>
-                <button class="btn" onclick="addHubScan()">Scan & Tambah Ke Mobil</button>
+
+                <div class="form-group">
+                    <label>Kelurahan / Desa</label>
+                    <select id="inputDesa" class="form-control">
+                        <option value="Cikeruh">Desa Cikeruh</option>
+                        <option value="Cilayung">Desa Cilayung</option>
+                        <option value="Cileles">Desa Cileles</option>
+                        <option value="Cipacing">Desa Cipacing</option>
+                        <option value="Cisempur">Desa Cisempur</option>
+                        <option value="Hegarmanah">Desa Hegarmanah</option>
+                        <option value="Jatimukti">Desa Jatimukti</option>
+                        <option value="Jatiroke">Desa Jatiroke</option>
+                        <option value="Mekargalih">Desa Mekargalih</option>
+                        <option value="Sayang">Desa Sayang</option>
+                        <option value="Cibeusi">Desa Cibeusi</option>
+                        <option value="Cintamulya">Desa Cintamulya</option>
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label>ID Paket / No Resi SPX</label>
+                    <input type="text" id="inputIdPaket" class="form-control" placeholder="Tempel hasil copy dari SPX atau Scan Barcode...">
+                </div>
+
+                <div class="form-group">
+                    <label>Detail Alamat / Catatan Lengkap (Opsional)</label>
+                    <input type="text" id="inputAddressDetail" class="form-control" placeholder="Contoh: Dsn Cinenggang Rt 03 Rw 05 (dkt warung budeh)">
+                </div>
+
+                <div class="form-group">
+                    <label>Nama Penerima (Opsional)</label>
+                    <input type="text" id="inputReceiver" class="form-control" placeholder="Contoh: Fitri Andriyani">
+                </div>
+
+                <button class="btn" onclick="processInputPaket()">Proses & Tampilkan Detail Paket</button>
             </div>
 
-            <div class="card">
-                <h2>Manifest Bawaan Mobil</h2>
-                <p style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 10px;">Daftar paket yang di-scan dari Hub & di-loading ke mobil:</p>
-                <div class="table-responsive">
-                    <table>
-                        <thead>
-                            <tr>
-                                <th>No</th>
-                                <th>No Resi</th>
-                                <th>Waktu Scan</th>
-                                <th>Status</th>
-                            </tr>
-                        </thead>
-                        <tbody id="hubTableBody">
-                            <!-- Dynamic Content -->
-                        </tbody>
-                    </table>
+            <!-- TAMPILAN HASIL SEPERTI GAMBAR SPX EXPRESS -->
+            <div id="spxResultContainer" style="display: none;">
+                <h3 style="margin-bottom: 10px; color: var(--secondary);">Hasil Input Data Paket</h3>
+                
+                <div class="spx-detail-container">
+                    
+                    <!-- Card 1: ID Paket & Alamat Mentah -->
+                    <div class="spx-card">
+                        <div class="spx-card-title">
+                            <span class="spx-resi-header" id="resResi">SPXID069024873738</span>
+                            <span style="font-size: 1.2rem; color: var(--text-muted); cursor: pointer;" onclick="copyResi()">📋</span>
+                        </div>
+                        <div class="spx-address-text" id="resFullAddress">
+                            Dsn Cinenggang Rt 03 Rw 05 Desa Cileles (dkt warung budeh),JATINANGOR,KAB. SUMEDANG,JAWA BARAT
+                        </div>
+                    </div>
+
+                    <!-- Card 2: Alamat Rekomendasi -->
+                    <div class="spx-card">
+                        <div class="spx-card-title">
+                            <span>Alamat Rekomendasi</span>
+                            <span style="font-size: 1rem; color: var(--text-muted); cursor: pointer;">✏️</span>
+                        </div>
+                        <div class="spx-address-text" id="resRecoAddress">
+                            Desa, Cileles, Jatinangor, Kab. Sumedang, Jawa Barat 45363, Indonesia
+                        </div>
+                    </div>
+
+                    <!-- Card 3: Receiver Information -->
+                    <div class="spx-card">
+                        <div class="spx-card-title" style="margin-bottom: 5px;">
+                            <span>Receiver Information</span>
+                        </div>
+                        <div style="display: flex; justify-content: space-between; align-items: center;">
+                            <div>
+                                <div style="font-size: 1rem; font-weight: 600;" id="resReceiverName">Fitri Andriyani</div>
+                                <div style="font-size: 0.9rem; color: var(--text-muted);">************** 👁️</div>
+                            </div>
+                            <div style="background: #e2e8f0; width: 40px; height: 40px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 1.2rem;">
+                                💬
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Card 4: Assigned Hub (Dinamis Sesuai Desa yang Dipilih) -->
+                    <div class="spx-card">
+                        <div class="spx-hub-row">
+                            <span style="font-weight: 700; color: var(--text-dark);">Assigned Hub</span>
+                            <span style="font-weight: 600; color: #4a5568;" id="resAssignedHub">Desa Cileles</span>
+                        </div>
+                    </div>
+
                 </div>
             </div>
+
         </div>
 
         <!-- TAB 2: Basecamp & Sortir -->
@@ -305,7 +406,7 @@
                 <div class="stats-grid">
                     <div class="stat-box">
                         <h3 id="totalHubCount">0</h3>
-                        <p>TOTAL SCAN HUB</p>
+                        <p>TOTAL INPUT PAKET</p>
                     </div>
                     <div class="stat-box">
                         <h3 id="totalBasecampCount">0</h3>
@@ -410,7 +511,7 @@
                     </select>
                 </div>
 
-                <div class="proof-checklist" id="proofChecklistDisplay">
+                <div class="proof-checklist" id="proofChecklistDisplay" style="background: #f8fafc; border-left: 4px solid var(--primary); padding: 12px; margin-top: 10px;">
                     <strong>Syarat Bukti Foto di WA Group:</strong>
                     <ul id="proofRequirementList">
                         <li>Foto dekat resi (Admin scan)</li>
@@ -450,8 +551,14 @@
     </div>
 
     <script>
+        // Set Default Tanggal Hari Ini
+        document.addEventListener("DOMContentLoaded", function() {
+            let today = new Date().toISOString().split('T')[0];
+            document.getElementById('inputDate').value = today;
+        });
+
         // Data State
-        let hubScans = [];
+        let inputPaketList = [];
         let sortedPackages = [];
 
         function switchTab(tabId, btnElement) {
@@ -465,35 +572,45 @@
             btnElement.classList.add('active');
         }
 
-        function addHubScan() {
-            let input = document.getElementById('hubScanInput');
-            let resi = input.value.trim();
+        function processInputPaket() {
+            let resi = document.getElementById('inputIdPaket').value.trim();
+            let desa = document.getElementById('inputDesa').value;
+            let detailAddr = document.getElementById('inputAddressDetail').value.trim();
+            let receiver = document.getElementById('inputReceiver').value.trim() || 'Penerima Paket';
+
             if (!resi) {
-                alert("Masukkan No Resi!");
+                alert("Mohon isi atau tempel ID Paket / No Resi SPX!");
                 return;
             }
 
-            let now = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-            hubScans.push({ resi: resi, time: now });
-            input.value = '';
+            // Set Data ke Tampilan ala SPX Express
+            document.getElementById('resResi').innerText = resi;
+            
+            let fullAddressText = detailAddr ? `${detailAddr}, Desa ${desa}, JATINANGOR, KAB. SUMEDANG, JAWA BARAT` : `Desa ${desa}, JATINANGOR, KAB. SUMEDANG, JAWA BARAT`;
+            document.getElementById('resFullAddress').innerText = fullAddressText;
+            
+            document.getElementById('resRecoAddress').innerText = `Desa, ${desa}, Jatinangor, Kab. Sumedang, Jawa Barat 45363, Indonesia`;
+            document.getElementById('resReceiverName').innerText = receiver;
 
-            renderHubTable();
+            // MENGGANTI Assigned Hub SESUAI DESA YANG DIPILIH
+            document.getElementById('resAssignedHub').innerText = `Desa ${desa}`;
+
+            document.getElementById('spxResultContainer').style.display = 'block';
+
+            // Simpan ke state
+            inputPaketList.push({
+                resi: resi,
+                desa: desa,
+                receiver: receiver
+            });
+
             updateStats();
         }
 
-        function renderHubTable() {
-            let tbody = document.getElementById('hubTableBody');
-            tbody.innerHTML = '';
-            hubScans.forEach((item, index) => {
-                tbody.innerHTML += `
-                    <tr>
-                        <td>${index + 1}</td>
-                        <td><strong>${item.resi}</strong></td>
-                        <td>${item.time}</td>
-                        <td><span class="badge badge-reg">Loaded Mobil</span></td>
-                    </tr>
-                `;
-            });
+        function copyResi() {
+            let resiText = document.getElementById('resResi').innerText;
+            navigator.clipboard.writeText(resiText);
+            alert("No Resi berhasil disalin: " + resiText);
         }
 
         function toggleCodField() {
@@ -550,7 +667,7 @@
         }
 
         function updateStats() {
-            document.getElementById('totalHubCount').innerText = hubScans.length;
+            document.getElementById('totalHubCount').innerText = inputPaketList.length;
             document.getElementById('totalBasecampCount').innerText = sortedPackages.length;
         }
 
