@@ -1,0 +1,644 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sistem Operasional Kurir SPX Mitra</title>
+    <style>
+        :root {
+            --primary: #ee4d2d;
+            --primary-dark: #d03e1f;
+            --secondary: #2c3e50;
+            --bg-light: #f8f9fa;
+            --card-bg: #ffffff;
+            --text-dark: #333333;
+            --text-muted: #6c757d;
+            --border: #e2e8f0;
+            --success: #28a745;
+            --warning: #ffc107;
+            --info: #17a2b8;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        body {
+            background-color: var(--bg-light);
+            color: var(--text-dark);
+            line-height: 1.5;
+            padding-bottom: 40px;
+        }
+
+        header {
+            background-color: var(--primary);
+            color: white;
+            padding: 20px;
+            text-align: center;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+        }
+
+        header h1 {
+            font-size: 1.6rem;
+            margin-bottom: 4px;
+        }
+
+        header p {
+            font-size: 0.9rem;
+            opacity: 0.9;
+        }
+
+        .container {
+            max-width: 900px;
+            margin: 20px auto;
+            padding: 0 15px;
+        }
+
+        /* Navigation Steps */
+        .step-nav {
+            display: flex;
+            overflow-x: auto;
+            background: white;
+            padding: 10px;
+            border-radius: 10px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+            margin-bottom: 20px;
+            gap: 10px;
+        }
+
+        .step-btn {
+            flex: 0 0 auto;
+            padding: 8px 16px;
+            border: none;
+            background: #edf2f7;
+            color: var(--text-dark);
+            border-radius: 20px;
+            font-weight: 600;
+            font-size: 0.85rem;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .step-btn.active {
+            background: var(--primary);
+            color: white;
+        }
+
+        /* Card Section */
+        .card {
+            background: var(--card-bg);
+            border-radius: 12px;
+            padding: 20px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+            margin-bottom: 20px;
+            border: 1px solid var(--border);
+        }
+
+        .card h2 {
+            font-size: 1.2rem;
+            color: var(--secondary);
+            margin-bottom: 15px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            border-bottom: 2px solid var(--bg-light);
+            padding-bottom: 10px;
+        }
+
+        .form-group {
+            margin-bottom: 15px;
+        }
+
+        .form-group label {
+            display: block;
+            font-size: 0.85rem;
+            font-weight: 600;
+            margin-bottom: 5px;
+            color: var(--text-dark);
+        }
+
+        .form-control {
+            width: 100%;
+            padding: 10px 12px;
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            font-size: 0.95rem;
+            outline: none;
+        }
+
+        .form-control:focus {
+            border-color: var(--primary);
+        }
+
+        .btn {
+            display: inline-block;
+            width: 100%;
+            padding: 12px;
+            background: var(--primary);
+            color: white;
+            border: none;
+            border-radius: 6px;
+            font-weight: bold;
+            font-size: 1rem;
+            cursor: pointer;
+            text-align: center;
+            transition: background 0.2s;
+        }
+
+        .btn:hover {
+            background: var(--primary-dark);
+        }
+
+        .btn-secondary {
+            background: var(--secondary);
+        }
+
+        /* Tables & Lists */
+        .table-responsive {
+            overflow-x: auto;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 10px;
+            font-size: 0.9rem;
+        }
+
+        th, td {
+            padding: 10px;
+            border: 1px solid var(--border);
+            text-align: left;
+        }
+
+        th {
+            background-color: #f1f5f9;
+            color: var(--secondary);
+            font-weight: 600;
+        }
+
+        /* Badges */
+        .badge {
+            display: inline-block;
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 0.75rem;
+            font-weight: bold;
+            color: white;
+        }
+
+        .badge-reg { background-color: var(--info); }
+        .badge-cod { background-color: var(--warning); color: #333; }
+        .badge-cek { background-color: var(--primary); }
+
+        /* Checklist Requirement Display */
+        .proof-checklist {
+            background: #f8fafc;
+            border-left: 4px solid var(--primary);
+            padding: 12px;
+            margin-top: 10px;
+            border-radius: 0 6px 6px 0;
+            font-size: 0.85rem;
+        }
+
+        .proof-checklist ul {
+            margin-left: 20px;
+            margin-top: 5px;
+        }
+
+        /* Tab Visibility Control */
+        .tab-content {
+            display: none;
+        }
+
+        .tab-content.active {
+            display: block;
+        }
+
+        /* Summary Stats */
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+            gap: 15px;
+            margin-bottom: 15px;
+        }
+
+        .stat-box {
+            background: #f1f5f9;
+            padding: 15px;
+            border-radius: 8px;
+            text-align: center;
+        }
+
+        .stat-box h3 {
+            font-size: 1.4rem;
+            color: var(--primary);
+        }
+
+        .stat-box p {
+            font-size: 0.8rem;
+            color: var(--text-muted);
+            font-weight: 600;
+        }
+    </style>
+</head>
+<body>
+
+    <header>
+        <h1>SPX Mitra Express</h1>
+        <p>Aplikasi Driver Mobil & Operasional Basecamp</p>
+    </header>
+
+    <div class="container">
+        
+        <!-- Navigation Bar -->
+        <div class="step-nav">
+            <button class="step-btn active" onclick="switchTab('hubTab', this)">1-3. Hub & Pickup</button>
+            <button class="step-btn" onclick="switchTab('basecampTab', this)">4-7. Serah Terima & Sortir</button>
+            <button class="step-btn" onclick="switchTab('manifestTab', this)">8-9. Manifest Rider</button>
+            <button class="step-btn" onclick="switchTab('waTab', this)">10-12. WA Verification & Loop</button>
+        </div>
+
+        <!-- TAB 1: Hub & Loading -->
+        <div id="hubTab" class="tab-content active">
+            <div class="card">
+                <h2>1. Penjemputan Hub (Driver Mobil)</h2>
+                <div class="form-group">
+                    <label>Jadwal Penjemputan Leader</label>
+                    <input type="text" class="form-control" value="Sesi Pagi - 07:30 WIB (Hub Utama)" readonly>
+                </div>
+                <div class="form-group">
+                    <label>Scan Resi / Barcode Paket Hub</label>
+                    <input type="text" id="hubScanInput" class="form-control" placeholder="Arahkan Scanner / Ketik No Resi SPX...">
+                </div>
+                <button class="btn" onclick="addHubScan()">Scan & Tambah Ke Mobil</button>
+            </div>
+
+            <div class="card">
+                <h2>Manifest Bawaan Mobil</h2>
+                <p style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 10px;">Daftar paket yang di-scan dari Hub & di-loading ke mobil:</p>
+                <div class="table-responsive">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>No</th>
+                                <th>No Resi</th>
+                                <th>Waktu Scan</th>
+                                <th>Status</th>
+                            </tr>
+                        </thead>
+                        <tbody id="hubTableBody">
+                            <!-- Dynamic Content -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- TAB 2: Basecamp & Sortir -->
+        <div id="basecampTab" class="tab-content">
+            <div class="card">
+                <h2>5-7. Serah Terima & Marking Admin</h2>
+                <div class="stats-grid">
+                    <div class="stat-box">
+                        <h3 id="totalHubCount">0</h3>
+                        <p>TOTAL SCAN HUB</p>
+                    </div>
+                    <div class="stat-box">
+                        <h3 id="totalBasecampCount">0</h3>
+                        <p>DIHITUNG ADMIN</p>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label>Input / Scan Resi di Basecamp</label>
+                    <input type="text" id="bcScanInput" class="form-control" placeholder="Scan ulang paket dari mobil...">
+                </div>
+
+                <div class="form-group">
+                    <label>Kategori Paket / Jenis COD</label>
+                    <select id="bcTypeSelect" class="form-control" onchange="toggleCodField()">
+                        <option value="REGULER">REGULER</option>
+                        <option value="COD">COD (Bayar di Tempat)</option>
+                        <option value="COD CEK DULU">COD CEK DULU</option>
+                    </select>
+                </div>
+
+                <div class="form-group" id="codAmountGroup" style="display:none;">
+                    <label>Nominal Uang COD (Rp)</label>
+                    <input type="number" id="bcCodAmount" class="form-control" placeholder="Contoh: 150000">
+                </div>
+
+                <div class="form-group">
+                    <label>Sortir Area (Jalan / Desa / Komplek / RT-RW)</label>
+                    <input type="text" id="bcAreaInput" class="form-control" placeholder="Contoh: Komplek Brimob / Jl. Achmad Syam">
+                </div>
+
+                <button class="btn btn-secondary" onclick="processAdminSort()">Verifikasi & Sortir Paket</button>
+            </div>
+
+            <div class="card">
+                <h2>Hasil Sortir Basecamp</h2>
+                <div class="table-responsive">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Resi</th>
+                                <th>Area</th>
+                                <th>Tipe</th>
+                                <th>Tagihan COD</th>
+                            </tr>
+                        </thead>
+                        <tbody id="sortedTableBody">
+                            <!-- Dynamic Content -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- TAB 3: Manifest Rider -->
+        <div id="manifestTab" class="tab-content">
+            <div class="card">
+                <h2>8-9. Plotting Area & Manifest Karcis Rider</h2>
+                <div class="form-group">
+                    <label>Pilih Kurir Rider Motor</label>
+                    <select id="riderSelect" class="form-control">
+                        <option value="Rider A (Komplek Brimob & Sekitar)">Kurir A</option>
+                        <option value="Rider B (Jl. Achmad Syam)">Kurir B</option>
+                        <option value="Rider C (Desa Cikeruh)">Kurir C</option>
+                    </select>
+                </div>
+                <button class="btn" onclick="generateRiderManifest()">Generate Karcis Manifest Rider</button>
+            </div>
+
+            <div class="card" id="manifestCard" style="display:none;">
+                <h2 style="color: var(--primary);">Karcis Jalan Rider</h2>
+                <div id="manifestSummary" style="margin-bottom: 15px; font-size: 0.9rem;">
+                    <!-- Summary Info -->
+                </div>
+                <div class="table-responsive">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>No</th>
+                                <th>Resi</th>
+                                <th>Area</th>
+                                <th>Tipe</th>
+                                <th>Nominal COD</th>
+                            </tr>
+                        </thead>
+                        <tbody id="riderManifestTable">
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- TAB 4: WhatsApp Verification & Loop -->
+        <div id="waTab" class="tab-content">
+            <div class="card">
+                <h2>10-11. Verifikasi WA Group POD (Proof of Delivery)</h2>
+                
+                <div class="form-group">
+                    <label>Pilih Resi Paket yang Terkirim</label>
+                    <select id="waResiSelect" class="form-control" onchange="updateProofRequirements()">
+                        <!-- Dynamic -->
+                    </select>
+                </div>
+
+                <div class="proof-checklist" id="proofChecklistDisplay">
+                    <strong>Syarat Bukti Foto di WA Group:</strong>
+                    <ul id="proofRequirementList">
+                        <li>Foto dekat resi (Admin scan)</li>
+                        <li>Foto paket dipegang rider</li>
+                        <li>Foto tempat/penerima paket</li>
+                    </ul>
+                </div>
+
+                <div class="form-group" style="margin-top: 15px;">
+                    <label>Simulasi Input Admin (Scan dari Foto WA)</label>
+                    <button class="btn btn-secondary" onclick="confirmWaDelivery()">Verifikasi POD & Input SPX Express</button>
+                </div>
+            </div>
+
+            <div class="card">
+                <h2>12. Pemisahan Paket Retur / Kembali ke Basecamp</h2>
+                <p style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 10px;">Jika paket gagal dikirim / ditolak pada COD Cek Dulu:</p>
+                <div class="table-responsive">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Resi</th>
+                                <th>Alasan Kembali</th>
+                                <th>Status</th>
+                            </tr>
+                        </thead>
+                        <tbody id="returTableBody">
+                            <tr>
+                                <td colspan="3" style="text-align:center; color: var(--text-muted);">Belum ada paket retur trip ini.</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+    <script>
+        // Data State
+        let hubScans = [];
+        let sortedPackages = [];
+
+        function switchTab(tabId, btnElement) {
+            let tabs = document.querySelectorAll('.tab-content');
+            tabs.forEach(tab => tab.classList.remove('active'));
+
+            let btns = document.querySelectorAll('.step-btn');
+            btns.forEach(btn => btn.classList.remove('active'));
+
+            document.getElementById(tabId).classList.add('active');
+            btnElement.classList.add('active');
+        }
+
+        function addHubScan() {
+            let input = document.getElementById('hubScanInput');
+            let resi = input.value.trim();
+            if (!resi) {
+                alert("Masukkan No Resi!");
+                return;
+            }
+
+            let now = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+            hubScans.push({ resi: resi, time: now });
+            input.value = '';
+
+            renderHubTable();
+            updateStats();
+        }
+
+        function renderHubTable() {
+            let tbody = document.getElementById('hubTableBody');
+            tbody.innerHTML = '';
+            hubScans.forEach((item, index) => {
+                tbody.innerHTML += `
+                    <tr>
+                        <td>${index + 1}</td>
+                        <td><strong>${item.resi}</strong></td>
+                        <td>${item.time}</td>
+                        <td><span class="badge badge-reg">Loaded Mobil</span></td>
+                    </tr>
+                `;
+            });
+        }
+
+        function toggleCodField() {
+            let type = document.getElementById('bcTypeSelect').value;
+            let group = document.getElementById('codAmountGroup');
+            if (type === 'COD' || type === 'COD CEK DULU') {
+                group.style.display = 'block';
+            } else {
+                group.style.display = 'none';
+            }
+        }
+
+        function processAdminSort() {
+            let resi = document.getElementById('bcScanInput').value.trim();
+            let type = document.getElementById('bcTypeSelect').value;
+            let amount = document.getElementById('bcCodAmount').value || 0;
+            let area = document.getElementById('bcAreaInput').value.trim();
+
+            if (!resi || !area) {
+                alert("Mohon isi No Resi dan Area Sortir!");
+                return;
+            }
+
+            sortedPackages.push({
+                resi: resi,
+                type: type,
+                amount: parseInt(amount),
+                area: area,
+                status: 'Basecamp'
+            });
+
+            document.getElementById('bcScanInput').value = '';
+            document.getElementById('bcCodAmount').value = '';
+            
+            renderSortedTable();
+            updateStats();
+            populateWaResiDropdown();
+        }
+
+        function renderSortedTable() {
+            let tbody = document.getElementById('sortedTableBody');
+            tbody.innerHTML = '';
+            sortedPackages.forEach(pkg => {
+                let badgeClass = pkg.type === 'REGULER' ? 'badge-reg' : (pkg.type === 'COD' ? 'badge-cod' : 'badge-cek');
+                tbody.innerHTML += `
+                    <tr>
+                        <td><strong>${pkg.resi}</strong></td>
+                        <td>${pkg.area}</td>
+                        <td><span class="badge ${badgeClass}">${pkg.type}</span></td>
+                        <td>Rp ${pkg.amount.toLocaleString()}</td>
+                    </tr>
+                `;
+            });
+        }
+
+        function updateStats() {
+            document.getElementById('totalHubCount').innerText = hubScans.length;
+            document.getElementById('totalBasecampCount').innerText = sortedPackages.length;
+        }
+
+        function generateRiderManifest() {
+            let rider = document.getElementById('riderSelect').value;
+            let manifestCard = document.getElementById('manifestCard');
+            let tbody = document.getElementById('riderManifestTable');
+            let summary = document.getElementById('manifestSummary');
+
+            if (sortedPackages.length === 0) {
+                alert("Belum ada paket yang disortir admin!");
+                return;
+            }
+
+            let totalCod = 0;
+            let codCount = 0;
+            tbody.innerHTML = '';
+
+            sortedPackages.forEach((pkg, idx) => {
+                if (pkg.type !== 'REGULER') {
+                    totalCod += pkg.amount;
+                    codCount++;
+                }
+                let badgeClass = pkg.type === 'REGULER' ? 'badge-reg' : (pkg.type === 'COD' ? 'badge-cod' : 'badge-cek');
+                tbody.innerHTML += `
+                    <tr>
+                        <td>${idx + 1}</td>
+                        <td><strong>${pkg.resi}</strong></td>
+                        <td>${pkg.area}</td>
+                        <td><span class="badge ${badgeClass}">${pkg.type}</span></td>
+                        <td>Rp ${pkg.amount.toLocaleString()}</td>
+                    </tr>
+                `;
+            });
+
+            summary.innerHTML = `
+                <p><strong>Kurir Assignment:</strong> ${rider}</p>
+                <p><strong>Total Paket:</strong> ${sortedPackages.length} Pcs | <strong>Total COD:</strong> ${codCount} Paket (Rp ${totalCod.toLocaleString()})</p>
+            `;
+
+            manifestCard.style.display = 'block';
+        }
+
+        function populateWaResiDropdown() {
+            let select = document.getElementById('waResiSelect');
+            select.innerHTML = '';
+            sortedPackages.forEach(pkg => {
+                select.innerHTML += `<option value="${pkg.resi}">${pkg.resi} - (${pkg.type})</option>`;
+            });
+            updateProofRequirements();
+        }
+
+        function updateProofRequirements() {
+            let resi = document.getElementById('waResiSelect').value;
+            let pkg = sortedPackages.find(p => p.resi === resi);
+            let list = document.getElementById('proofRequirementList');
+
+            if (!pkg) return;
+
+            if (pkg.type === 'REGULER') {
+                list.innerHTML = `
+                    <li>1. Foto dekat resi (Admin scan)</li>
+                    <li>2. Foto paket dipegang rider</li>
+                    <li>3. Foto tempat/penerima paket</li>
+                `;
+            } else if (pkg.type === 'COD') {
+                list.innerHTML = `
+                    <li>1. Foto dekat resi (Admin scan)</li>
+                    <li>2. Foto paket dipegang rider</li>
+                    <li>3. Foto tempat/penerima paket</li>
+                    <li>4. Foto Uang Tunai / Bukti Transfer QRIS (Rp ${pkg.amount.toLocaleString()})</li>
+                `;
+            } else if (pkg.type === 'COD CEK DULU') {
+                list.innerHTML = `
+                    <li>1. Foto dekat resi (Admin scan)</li>
+                    <li>2. Foto paket dipegang rider</li>
+                    <li>3. Foto tempat/penerima paket</li>
+                    <li>4. <strong>Video Unboxing</strong> (Jika dibuka oleh penerima)</li>
+                    <li>5. Foto Uang Tunai / Bukti Transfer QRIS (Rp ${pkg.amount.toLocaleString()})</li>
+                `;
+            }
+        }
+
+        function confirmWaDelivery() {
+            let resi = document.getElementById('waResiSelect').value;
+            if (!resi) return;
+            alert(`Berhasil! Admin telah menginput bukti foto dari WA untuk resi ${resi} ke Aplikasi SPX Express.`);
+        }
+    </script>
+</body>
+</html>
