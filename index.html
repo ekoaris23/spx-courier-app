@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>SPX PAKET GASKEUN 🛵🏍️</title>
-    <!-- Library Tesseract.js untuk OCR (Pembacaan Teks dari Gambar) -->
+    <!-- Library Tesseract.js untuk OCR -->
     <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
     <style>
         :root {
@@ -17,6 +17,7 @@
             --text-muted: #6c757d;
             --border: #e2e8f0;
             --success: #28a745;
+            --danger: #dc3545;
             --warning: #ffc107;
             --info: #17a2b8;
         }
@@ -143,7 +144,7 @@
             text-align: center;
             border-radius: 8px;
             cursor: pointer;
-            margin-bottom: 15px;
+            margin-bottom: 10px;
             transition: background 0.2s;
         }
 
@@ -158,13 +159,27 @@
             margin-top: 5px;
         }
 
-        .loading-ocr {
+        /* Status Upload Alert Notification */
+        .upload-alert {
             display: none;
-            text-align: center;
-            padding: 10px;
-            color: var(--primary-dark);
+            padding: 10px 15px;
+            border-radius: 6px;
+            font-size: 0.85rem;
             font-weight: bold;
-            font-size: 0.9rem;
+            margin-bottom: 15px;
+            text-align: center;
+        }
+
+        .upload-alert.success {
+            background-color: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+
+        .upload-alert.danger {
+            background-color: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
         }
 
         .btn {
@@ -337,9 +352,8 @@
                     <input type="file" id="screenshotInput" accept="image/*" style="display: none;" onchange="handleScreenshotUpload(event)">
                 </div>
 
-                <div id="ocrLoading" class="loading-ocr">
-                    ⏳ Membaca data dari Screenshot... Mohon tunggu sebentar.
-                </div>
+                <!-- NOTIFIKASI STATUS UPLOAD -->
+                <div id="uploadAlert" class="upload-alert"></div>
                 
                 <div class="form-group">
                     <label>Tanggal Input</label>
@@ -387,9 +401,30 @@
                 <button class="btn" onclick="processInputPaket()">Proses & Tampilkan Detail Paket</button>
             </div>
 
+            <!-- TABEL HASIL DAFTAR LIST DATA PAKET (BARU) -->
+            <div class="card" id="inputTableCard" style="display: none;">
+                <h2>Daftar List Paket Ter-Input</h2>
+                <div class="table-responsive">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>No</th>
+                                <th>No Resi SPX</th>
+                                <th>Kelurahan / Desa</th>
+                                <th>Penerima</th>
+                                <th>Tanggal</th>
+                            </tr>
+                        </thead>
+                        <tbody id="inputPaketTableBody">
+                            <!-- Dynamic Rows -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
             <!-- TAMPILAN HASIL SEPERTI GAMBAR SPX EXPRESS -->
             <div id="spxResultContainer" style="display: none;">
-                <h3 style="margin-bottom: 10px; color: var(--secondary);">Hasil Input Data Paket</h3>
+                <h3 style="margin-bottom: 10px; color: var(--secondary);">Hasil Detail Paket Terakhir</h3>
                 
                 <div class="spx-detail-container">
                     
@@ -620,21 +655,32 @@
         // FITUR OCR MEMBACA SCREENSHOT SPX EXPRESS AUTOMATIS
         function handleScreenshotUpload(event) {
             let file = event.target.files[0];
+            let alertBox = document.getElementById('uploadAlert');
+
             if (!file) return;
 
-            let loading = document.getElementById('ocrLoading');
-            loading.style.display = 'block';
+            // Tampilkan Status Loading
+            alertBox.style.display = 'block';
+            alertBox.className = 'upload-alert danger';
+            alertBox.style.backgroundColor = '#fff3cd';
+            alertBox.style.color = '#856404';
+            alertBox.style.borderColor = '#ffeeba';
+            alertBox.innerText = '⏳ Membaca data dari Screenshot... Mohon tunggu.';
 
             Tesseract.recognize(
                 file,
                 'ind+eng',
                 { logger: m => console.log(m) }
             ).then(({ data: { text } }) => {
-                loading.style.display = 'none';
+                // Notifikasi Berhasil (Background Hijau)
+                alertBox.className = 'upload-alert success';
+                alertBox.innerText = '✅ Gambar berhasil di-upload & dibaca!';
+                
                 parseSpxOcrText(text);
             }).catch(err => {
-                loading.style.display = 'none';
-                alert("Gagal membaca teks dari gambar. Silakan input manual.");
+                // Notifikasi Gagal (Background Merah)
+                alertBox.className = 'upload-alert danger';
+                alertBox.innerText = '❌ Gambar gagal di-upload / dibaca! Silakan coba lagi.';
                 console.error(err);
             });
         }
@@ -659,7 +705,7 @@
                 }
             }
 
-            // 3. Ekstrak Penerima (Mencari teks setelah Receiver Information)
+            // 3. Ekstrak Penerima
             let lines = text.split('\n').map(l => l.trim()).filter(l => l.length > 0);
             for (let i = 0; i < lines.length; i++) {
                 if (lines[i].toLowerCase().includes("receiver") && lines[i+1]) {
@@ -671,19 +717,17 @@
                 }
             }
 
-            // 4. Ekstrak Detail Alamat (Baris setelah Resi)
+            // 4. Ekstrak Detail Alamat
             if (lines.length > 1) {
                 let addrLine = lines.find(l => l.toLowerCase().includes("dsn") || l.toLowerCase().includes("rt") || l.toLowerCase().includes("rw") || l.toLowerCase().includes("jl"));
                 if (addrLine) {
                     document.getElementById('inputAddressDetail').value = addrLine;
                 }
             }
-
-            alert("Keren! Data berhasil di-scan otomatis dari Screenshot SPX.");
-            processInputPaket();
         }
 
         function processInputPaket() {
+            let dateVal = document.getElementById('inputDate').value;
             let resi = document.getElementById('inputIdPaket').value.trim();
             let desa = document.getElementById('inputDesa').value;
             let detailAddr = document.getElementById('inputAddressDetail').value.trim();
@@ -694,7 +738,18 @@
                 return;
             }
 
-            // Set Data ke Tampilan ala SPX Express
+            // Tambahkan ke State List
+            inputPaketList.push({
+                date: dateVal,
+                resi: resi,
+                desa: desa,
+                receiver: receiver
+            });
+
+            // Update Tabel List Paket
+            renderInputPaketTable();
+
+            // Set Data ke Tampilan Detail ala SPX Express
             document.getElementById('resResi').innerText = resi;
             
             let fullAddressText = detailAddr ? `${detailAddr}, Desa ${desa}, JATINANGOR, KAB. SUMEDANG, JAWA BARAT` : `Desa ${desa}, JATINANGOR, KAB. SUMEDANG, JAWA BARAT`;
@@ -702,20 +757,32 @@
             
             document.getElementById('resRecoAddress').innerText = `Desa, ${desa}, Jatinangor, Kab. Sumedang, Jawa Barat 45363, Indonesia`;
             document.getElementById('resReceiverName').innerText = receiver;
-
-            // MENGGANTI Assigned Hub SESUAI DESA YANG DIPILIH
             document.getElementById('resAssignedHub').innerText = `Desa ${desa}`;
 
             document.getElementById('spxResultContainer').style.display = 'block';
 
-            // Simpan ke state
-            inputPaketList.push({
-                resi: resi,
-                desa: desa,
-                receiver: receiver
+            updateStats();
+        }
+
+        // RENDER TABEL DAFTAR LIST INPUT PAKET
+        function renderInputPaketTable() {
+            let tbody = document.getElementById('inputPaketTableBody');
+            let tableCard = document.getElementById('inputTableCard');
+            
+            tbody.innerHTML = '';
+            inputPaketList.forEach((item, index) => {
+                tbody.innerHTML += `
+                    <tr>
+                        <td>${index + 1}</td>
+                        <td><strong>${item.resi}</strong></td>
+                        <td>Desa ${item.desa}</td>
+                        <td>${item.receiver}</td>
+                        <td>${item.date}</td>
+                    </tr>
+                `;
             });
 
-            updateStats();
+            tableCard.style.display = 'block';
         }
 
         function copyResi() {
