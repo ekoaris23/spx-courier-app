@@ -60,7 +60,7 @@
         }
 
         .container {
-            max-width: 1000px;
+            max-width: 1100px;
             margin: 20px auto;
             padding: 0 15px;
         }
@@ -252,6 +252,16 @@
         .badge-cod { background-color: var(--warning); color: #333; }
         .badge-cek { background-color: var(--primary); }
 
+        .badge-patokan {
+            background-color: #e2e8f0;
+            color: #2d3748;
+            border: 1px solid #cbd5e0;
+            font-weight: 600;
+            font-size: 0.8rem;
+            padding: 3px 8px;
+            border-radius: 4px;
+        }
+
         .spx-detail-container {
             display: flex;
             flex-direction: column;
@@ -412,6 +422,11 @@
                 </div>
 
                 <div class="form-group">
+                    <label>Patokan Lokasi (Terisi Otomatis / Custom)</label>
+                    <input type="text" id="inputPatokan" class="form-control" placeholder="Contoh: Dsn Cinenggang / Jalan Manglayang / Pondok Hijau Baru">
+                </div>
+
+                <div class="form-group">
                     <label>Nama Penerima (Opsional)</label>
                     <input type="text" id="inputReceiver" class="form-control" placeholder="Contoh: Fitri Andriyani">
                 </div>
@@ -430,6 +445,7 @@
                                 <th>No Resi SPX</th>
                                 <th>Nama Penerima</th>
                                 <th>Alamat Lengkap</th>
+                                <th>Patokan</th>
                                 <th>Desa / Kelurahan</th>
                                 <th>Tipe</th>
                                 <th>COD (Rp)</th>
@@ -646,7 +662,7 @@
     </div>
 
     <script>
-        // KUNCI DAN KONFIGURASI FIREBASE ANDA
+        // FIREBASE CONFIGURATION
         const firebaseConfig = {
             apiKey: "AIzaSyBDQ_MP1QFVA0PFvQck8E3MxG1vDbOcizI",
             authDomain: "spx-paket-gaskeun.firebaseapp.com",
@@ -680,7 +696,6 @@
             let today = new Date().toISOString().split('T')[0];
             document.getElementById('inputDate').value = today;
 
-            // Memuat Data Otomatis Realtime dari Cloud Database Google
             if (db) {
                 db.ref('paket_input').on('value', (snapshot) => {
                     const data = snapshot.val();
@@ -728,6 +743,31 @@
             });
         }
 
+        // PARSER DEDIKASI PATOKAN LOKASI (Dsn/Jln/Perum/Masjid/Pondok)
+        function extractPatokan(text) {
+            if (!text) return "-";
+            
+            // 1. Ekstrak Dusun (Dsn / Dusun)
+            let dsnMatch = text.match(/(?:dsn|dusun)\.?\s*([a-zA-Z0-9\s]+?)(?:,|\.|\bRT|\bRW|\bDsa|\bDs|\bDesa|$)/i);
+            if (dsnMatch) return "Dsn " + dsnMatch[1].trim();
+
+            // 2. Ekstrak Jalan (Jalan / Jln / Jl)
+            let jlnMatch = text.match(/(?:jalan|jln|jl)\.?\s*([a-zA-Z0-9\s]+?)(?:,|\.|\bRT|\bRW|\bDsa|\bDs|\bDesa|$)/i);
+            if (jlnMatch) return "Jln " + jlnMatch[1].trim();
+
+            // 3. Ekstrak Perumahan / Komplek / Pondok / Masjid
+            let placeMatch = text.match(/(?:perumahan|perum|komplek|kpl|pondok|masjid|griya)\s+([a-zA-Z0-9\s]+?)(?:,|\.|\bJalan|\bJl|\bRT|\bRW|$)/i);
+            if (placeMatch) return placeMatch[0].trim();
+
+            // 4. Fallback: Ambil frasa pertama sebelum RT/RW/Desa
+            let parts = text.split(/,|RT|RW|Desa|Dsa|Ds/i);
+            if (parts[0] && parts[0].trim().length > 3) {
+                return parts[0].replace(/^[\d\s\.\-@©]+/, '').trim();
+            }
+
+            return "-";
+        }
+
         // PARSER OCR MULTI-PAKET
         function parseMultiSpxOcrText(rawText) {
             let alertBox = document.getElementById('uploadAlert');
@@ -751,7 +791,7 @@
                 let endIndex = (i < matches.length - 1) ? matches[i+1].index : rawText.length;
                 let blockText = rawText.substring(startIndex, endIndex);
 
-                // Cek Anti-Double Input
+                // Anti-Double Input
                 let isExist = inputPaketList.some(pkg => pkg.resi === resi);
                 if (isExist) {
                     duplicates.push(resi);
@@ -762,10 +802,13 @@
                 
                 // 1. Deteksi Alamat Lengkap
                 let detailAddr = "Alamat tidak terdeteksi";
-                let addrLine = lines.find(l => /dsa|ds|desa|kel|kelurahan|rt|rw|dsn|dusun|jl|jalan/i.test(l));
+                let addrLine = lines.find(l => /dsa|ds|desa|kel|kelurahan|rt|rw|dsn|dusun|jl|jalan|pondok|masjid|perum/i.test(l));
                 if (addrLine) detailAddr = addrLine;
 
-                // 2. Deteksi Kelurahan / Desa Jatinangor
+                // 2. Ekstrak Patokan Lokasi
+                let patokan = extractPatokan(detailAddr);
+
+                // 3. Deteksi Kelurahan / Desa Jatinangor
                 let desaFound = "Cileles"; 
                 for (let d of desaJatinangor) {
                     let reg = new RegExp(`(?:dsa|ds|desa|kel|kelurahan|\\b)\\s*${d}`, 'i');
@@ -775,7 +818,7 @@
                     }
                 }
 
-                // 3. Deteksi Tipe Paket & Nominal COD
+                // 4. Deteksi Tipe Paket & Nominal COD
                 let tipe = "REGULER";
                 let nominalCod = 0;
 
@@ -791,7 +834,7 @@
                     nominalCod = parseInt(cleanNum) || 0;
                 }
 
-                // 4. Deteksi Nama Penerima
+                // 5. Deteksi Nama Penerima
                 let receiver = "Penerima Paket";
                 for (let j = 0; j < lines.length; j++) {
                     if (/COD|Home|IDR/i.test(lines[j])) {
@@ -807,6 +850,7 @@
                     desa: desaFound,
                     receiver: receiver,
                     detailAddr: detailAddr,
+                    patokan: patokan,
                     tipe: tipe,
                     nominalCod: nominalCod,
                     timestamp: Date.now()
@@ -819,7 +863,6 @@
                 newAdded++;
             }
 
-            // Alert status
             alertBox.style.display = 'block';
             if (newAdded > 0 && duplicates.length === 0) {
                 alertBox.className = 'upload-alert success';
@@ -837,12 +880,13 @@
             updateStats();
         }
 
-        // INPUT MANUAL DENGAN PROTEKSI GANDA
+        // INPUT MANUAL DENGAN ESTRAKSI PATOKAN
         function processInputPaketManual() {
             let dateVal = document.getElementById('inputDate').value;
             let resi = document.getElementById('inputIdPaket').value.trim().toUpperCase();
             let desa = document.getElementById('inputDesa').value;
             let detailAddr = document.getElementById('inputAddressDetail').value.trim() || '-';
+            let patokanInput = document.getElementById('inputPatokan').value.trim();
             let receiver = document.getElementById('inputReceiver').value.trim() || 'Penerima Paket';
             let tipe = document.getElementById('inputTipe').value;
             let nominalCod = parseInt(document.getElementById('inputNominalCod').value) || 0;
@@ -863,12 +907,16 @@
                 return;
             }
 
+            // Jika patokan kosong, ekstrak otomatis dari detail alamat
+            let patokan = patokanInput || extractPatokan(detailAddr);
+
             let newPaket = {
                 date: dateVal,
                 resi: resi,
                 desa: desa,
                 receiver: receiver,
                 detailAddr: detailAddr,
+                patokan: patokan,
                 tipe: tipe,
                 nominalCod: nominalCod,
                 timestamp: Date.now()
@@ -886,9 +934,10 @@
             displayLastSpxCard(newPaket);
             updateStats();
 
-            // Reset Form
+            // Reset Form Input
             document.getElementById('inputIdPaket').value = '';
             document.getElementById('inputAddressDetail').value = '';
+            document.getElementById('inputPatokan').value = '';
             document.getElementById('inputReceiver').value = '';
         }
 
@@ -904,7 +953,7 @@
             document.getElementById('spxResultContainer').style.display = 'block';
         }
 
-        // RENDER TABEL HASIL DENGAN KOLOM ALAMAT LENGKAP
+        // RENDER TABEL HASIL DENGAN KOLOM PATOKAN LOKASI
         function renderInputPaketTable() {
             let tbody = document.getElementById('inputPaketTableBody');
             let tableCard = document.getElementById('inputTableCard');
@@ -912,12 +961,15 @@
             tbody.innerHTML = '';
             inputPaketList.forEach((item, index) => {
                 let badgeClass = item.tipe === 'REGULER' ? 'badge-reg' : (item.tipe === 'COD' ? 'badge-cod' : 'badge-cek');
+                let patokanDisplay = item.patokan || extractPatokan(item.detailAddr);
+
                 tbody.innerHTML += `
                     <tr>
                         <td>${index + 1}</td>
                         <td><strong>${item.resi}</strong></td>
                         <td>${item.receiver}</td>
-                        <td style="max-width: 250px; font-size: 0.83rem;">${item.detailAddr || '-'}</td>
+                        <td style="max-width: 230px; font-size: 0.83rem;">${item.detailAddr || '-'}</td>
+                        <td><span class="badge-patokan">${patokanDisplay}</span></td>
                         <td>Desa ${item.desa}</td>
                         <td><span class="badge ${badgeClass}">${item.tipe}</span></td>
                         <td>Rp ${(item.nominalCod || 0).toLocaleString()}</td>
