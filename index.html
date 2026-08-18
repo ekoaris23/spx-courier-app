@@ -482,8 +482,7 @@
         <div class="step-nav">
             <button class="step-btn admin-restricted" onclick="switchTab('dashTab', this)">📈 Dashboard & Grafik</button>
             <button class="step-btn admin-restricted" onclick="switchTab('inputTab', this)">📦 Input Paket SPX</button>
-            <button class="step-btn active" onclick="switchTab('basecampTab', this)">🚚 Serah Terima & Sortir</button>
-            <button class="step-btn" onclick="switchTab('manifestTab', this)">📝 Manifest Rider</button>
+            <button class="step-btn active" onclick="switchTab('manifestTab', this)">📝 Manifest Rider</button>
             <button class="step-btn" onclick="switchTab('waTab', this)">📲 Verifikasi WA POD</button>
         </div>
 
@@ -672,24 +671,8 @@
             </div>
         </div>
 
-        <!-- TAB 3: BASECAMP SORTIR -->
-        <div id="basecampTab" class="tab-content active">
-            <div class="card">
-                <h2>Serah Terima & Marking Admin</h2>
-                <div class="form-group">
-                    <label>Input / Scan Resi di Basecamp</label>
-                    <input type="text" id="bcScanInput" class="form-control" placeholder="Scan ulang paket dari mobil...">
-                </div>
-                <div class="form-group">
-                    <label>Sortir Area (Jalan / Desa / RT-RW)</label>
-                    <input type="text" id="bcAreaInput" class="form-control" placeholder="Contoh: Dsn Cinenggang / Jl. Achmad Syam">
-                </div>
-                <button class="btn btn-secondary" onclick="processAdminSort()">Verifikasi & Sortir Paket</button>
-            </div>
-        </div>
-
-        <!-- TAB 4: MANIFEST RIDER -->
-        <div id="manifestTab" class="tab-content">
+        <!-- TAB 3: MANIFEST RIDER -->
+        <div id="manifestTab" class="tab-content active">
             <div class="card">
                 <h2>Plotting Area & Manifest Karcis Rider</h2>
                 <div class="form-group">
@@ -703,7 +686,7 @@
             </div>
         </div>
 
-        <!-- TAB 5: WA POD -->
+        <!-- TAB 4: WA POD -->
         <div id="waTab" class="tab-content">
             <div class="card">
                 <h2>Verifikasi WA Group POD (Proof of Delivery)</h2>
@@ -855,9 +838,9 @@
                 sessionStorage.removeItem('spx_admin_logged');
                 checkAdminAuthState();
                 alert("Anda telah keluar dari mode Admin.");
-                // Pindah kembali ke tab publik (Basecamp)
+                // Pindah kembali ke tab publik (Manifest Rider)
                 let publicBtn = document.querySelectorAll('.step-btn')[2];
-                executeTabSwitch('basecampTab', publicBtn);
+                executeTabSwitch('manifestTab', publicBtn);
             }
         }
 
@@ -1193,7 +1176,6 @@
             filterPaketTable();
         }
 
-        function processAdminSort() { alert("Fitur Sortir Basecamp Berjalan."); }
         function generateRiderManifest() { alert("Manifest Rider Berhasil Dibuat."); }
     </script>
 </body>
