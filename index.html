@@ -872,7 +872,7 @@
             let waNum = formatPhoneToWa(phoneStr);
             if (!waNum) return null;
             
-            let message = "Halo " + (name || 'Kak') + ", kami dari Kurir SPX Express Paket Gaskeun. Paket Anda dengan No Resi *" + resi + "* sedang dalam perjalanan pengiriman hari ini. Mohon pastikan penerima berada di tempat. Terima kasih!";
+            let message = "Halo " + (name || 'Kak') + ", kami dari Kurir SPX Express. Paket Anda dengan No Resi *" + resi + "* sedang dalam perjalanan pengiriman hari ini. Mohon pastikan penerima berada di tempat. Terima kasih!";
             return "https://wa.me/" + waNum + "?text=" + encodeURIComponent(message);
         }
 
