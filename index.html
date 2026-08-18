@@ -4,20 +4,17 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>SPX PAKET GASKEUN 🛵🏍️</title>
-    <!-- Library Tesseract.js untuk OCR -->
     <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
     
-    <!-- Chart.js untuk Grafik Dashboard -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
-    <!-- Firebase SDK -->
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-database-compat.js"></script>
 
     <style>
         :root {
-            --primary: #800000; /* Merah Maroon ala PSC Dashboard */
-            --primary-dark: #5a0000;
+            --primary: #ee4d2d; /* Warna Orange Shopee */
+            --primary-dark: #d03e1f;
             --secondary: #2c3e50;
             --bg-light: #f4f6f9;
             --card-bg: #ffffff;
@@ -65,7 +62,7 @@
 
         header p {
             font-size: 0.85rem;
-            opacity: 0.9;
+            opacity: 0.95;
         }
 
         .status-badge {
@@ -126,7 +123,7 @@
         .step-btn.active {
             color: var(--primary);
             border-bottom: 3px solid var(--primary);
-            background: #fff5f5;
+            background: #fff5f2;
             border-radius: 4px 4px 0 0;
         }
 
@@ -289,6 +286,7 @@
             text-align: center;
         }
 
+        .btn:hover { background: var(--primary-dark); }
         .btn-secondary { background: var(--secondary); }
 
         .table-responsive { overflow-x: auto; }
@@ -340,8 +338,8 @@
 
     <header>
         <div>
-            <h1>🔧 SPX SERVICE SYSTEM</h1>
-            <p>Sistem Informasi Operasional & Owner Dashboard Basecamp Puri</p>
+            <h1>🛵 SPX PAKET GASKEUN</h1>
+            <p>aplikasi operasional admin & rider Basecamp PAKET GASKEUN PURI</p>
         </div>
         <div class="status-badge">
             <span class="status-dot"></span> Terhubung Realtime
@@ -350,7 +348,6 @@
 
     <div class="container">
         
-        <!-- Navigation Bar -->
         <div class="step-nav">
             <button class="step-btn active" onclick="switchTab('dashTab', this)">📈 Dashboard & Grafik</button>
             <button class="step-btn" onclick="switchTab('inputTab', this)">📦 Input Paket SPX</button>
@@ -359,17 +356,15 @@
             <button class="step-btn" onclick="switchTab('waTab', this)">📲 Verifikasi WA POD</button>
         </div>
 
-        <!-- TAB 1: DASHBOARD & GRAFIK -->
         <div id="dashTab" class="tab-content active">
             
-            <!-- Cards Ringkasan Metric -->
             <div class="metrics-grid">
                 <div class="metric-card">
                     <div class="metric-info">
                         <h4>TOTAL PAKET</h4>
                         <h2 id="dashTotalPaket">0</h2>
                     </div>
-                    <div class="metric-icon" style="background: #fff0f0; color: var(--primary);">📦</div>
+                    <div class="metric-icon" style="background: #fff5f2; color: var(--primary);">📦</div>
                 </div>
 
                 <div class="metric-card border-yellow">
@@ -397,7 +392,6 @@
                 </div>
             </div>
 
-            <!-- Graphs Section -->
             <div class="charts-grid">
                 <div class="chart-card">
                     <h3>📊 Status & Proporsi Tipe Paket</h3>
@@ -416,7 +410,6 @@
 
         </div>
 
-        <!-- TAB 2: INPUT PAKET -->
         <div id="inputTab" class="tab-content">
             <div class="card">
                 <h2>Form Input Paket SPX</h2>
@@ -492,7 +485,6 @@
                 <button class="btn" onclick="processInputPaketManual()">Proses & Tampilkan Detail Paket</button>
             </div>
 
-            <!-- TABEL HASIL DAFTAR PAKET -->
             <div class="card" id="inputTableCard" style="display: none;">
                 <h2>Daftar List Paket Ter-Input</h2>
                 <div class="table-responsive">
@@ -517,7 +509,6 @@
             </div>
         </div>
 
-        <!-- TAB 3: BASECAMP SORTIR -->
         <div id="basecampTab" class="tab-content">
             <div class="card">
                 <h2>Serah Terima & Marking Admin</h2>
@@ -533,7 +524,6 @@
             </div>
         </div>
 
-        <!-- TAB 4: MANIFEST RIDER -->
         <div id="manifestTab" class="tab-content">
             <div class="card">
                 <h2>Plotting Area & Manifest Karcis Rider</h2>
@@ -548,7 +538,6 @@
             </div>
         </div>
 
-        <!-- TAB 5: WA POD -->
         <div id="waTab" class="tab-content">
             <div class="card">
                 <h2>Verifikasi WA Group POD (Proof of Delivery)</h2>
@@ -644,7 +633,7 @@
                     datasets: [{
                         label: 'Nominal COD (Rp)',
                         data: new Array(12).fill(0),
-                        backgroundColor: '#800000'
+                        backgroundColor: '#ee4d2d'
                     }]
                 },
                 options: {
@@ -680,19 +669,16 @@
                 }
             });
 
-            // Set ke Elemen HTML
             document.getElementById('dashTotalPaket').innerText = totalPaket;
             document.getElementById('dashReguler').innerText = regulerCount;
             document.getElementById('dashCodCount').innerText = codCount + codCekDuluCount;
             document.getElementById('dashTotalCodAmount').innerText = 'Rp ' + totalCodAmount.toLocaleString();
 
-            // Update Donut Chart
             if (donutChart) {
                 donutChart.data.datasets[0].data = [regulerCount, codCount, codCekDuluCount];
                 donutChart.update();
             }
 
-            // Update Bar Chart
             if (barChart) {
                 barChart.data.datasets[0].data = desaJatinangor.map(d => desaCodMap[d]);
                 barChart.update();
