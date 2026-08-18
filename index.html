@@ -297,6 +297,35 @@
         .btn:hover { background: var(--primary-dark); }
         .btn-secondary { background: var(--secondary); }
 
+        .btn-toggle-manual {
+            background-color: #f8f9fa;
+            color: var(--secondary);
+            border: 1px solid var(--border);
+            padding: 10px 15px;
+            border-radius: 6px;
+            font-weight: 600;
+            font-size: 0.9rem;
+            cursor: pointer;
+            width: 100%;
+            text-align: left;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-top: 10px;
+            transition: background 0.2s;
+        }
+
+        .btn-toggle-manual:hover {
+            background-color: #edf2f7;
+        }
+
+        .manual-form-container {
+            display: none; /* Sembunyi secara default */
+            margin-top: 15px;
+            padding-top: 15px;
+            border-top: 2px dashed var(--border);
+        }
+
         .table-responsive { overflow-x: auto; }
 
         table {
@@ -441,6 +470,7 @@
             <div class="card">
                 <h2>Form Input Paket SPX</h2>
 
+                <!-- UPLOAD SCREENSHOT SCANNER -->
                 <div class="upload-box" onclick="document.getElementById('screenshotInput').click()">
                     <span style="font-size: 2rem;">📸</span>
                     <p>Upload Screenshot SPX (Mendukung Multi-Paket)</p>
@@ -448,68 +478,77 @@
                 </div>
 
                 <div id="uploadAlert" class="upload-alert"></div>
-                
-                <div class="form-group">
-                    <label>Tanggal Input <span class="required-star">*</span></label>
-                    <input type="date" id="inputDate" class="form-control" required>
-                </div>
 
-                <div class="form-group">
-                    <label>Kecamatan</label>
-                    <input type="text" class="form-control" value="Jatinangor" readonly style="background-color: #e9ecef; cursor: not-allowed;">
-                </div>
+                <!-- TOMBOL TOGGLE UNTUK MENAMPILKAN FORM INPUT MANUAL -->
+                <button type="button" class="btn-toggle-manual" onclick="toggleManualForm()">
+                    <span>✍️ Input Manual / Edit Detail Paket</span>
+                    <span id="toggleIcon">▼</span>
+                </button>
 
-                <div class="form-group">
-                    <label>Kelurahan / Desa <span class="required-star">*</span></label>
-                    <select id="inputDesa" class="form-control" required>
-                        <option value="Cikeruh">Desa Cikeruh</option>
-                        <option value="Cilayung">Desa Cilayung</option>
-                        <option value="Cileles">Desa Cileles</option>
-                        <option value="Cipacing">Desa Cipacing</option>
-                        <option value="Cisempur">Desa Cisempur</option>
-                        <option value="Hegarmanah">Desa Hegarmanah</option>
-                        <option value="Jatimukti">Desa Jatimukti</option>
-                        <option value="Jatiroke">Desa Jatiroke</option>
-                        <option value="Mekargalih">Desa Mekargalih</option>
-                        <option value="Sayang">Desa Sayang</option>
-                        <option value="Cibeusi">Desa Cibeusi</option>
-                        <option value="Cintamulya">Desa Cintamulya</option>
-                    </select>
-                </div>
-
-                <div class="form-group">
-                    <label>Tipe Paket & Nominal COD <span class="required-star">*</span></label>
-                    <div style="display: flex; gap: 10px;">
-                        <select id="inputTipe" class="form-control" style="flex: 1;" required>
-                            <option value="REGULER">REGULER</option>
-                            <option value="COD">COD</option>
-                            <option value="COD CEK DULU">COD CEK DULU</option>
-                        </select>
-                        <input type="number" id="inputNominalCod" class="form-control" placeholder="Nominal COD (Rp)" style="flex: 1;" value="0" required>
+                <!-- CONTAINER FORM DETIL (TERSEMBUNYI SECARA DEFAULT) -->
+                <div id="manualFormContainer" class="manual-form-container">
+                    <div class="form-group">
+                        <label>Tanggal Input <span class="required-star">*</span></label>
+                        <input type="date" id="inputDate" class="form-control" required>
                     </div>
-                </div>
 
-                <div class="form-group">
-                    <label>ID Paket / No Resi SPX <span class="required-star">*</span></label>
-                    <input type="text" id="inputIdPaket" class="form-control" placeholder="No Resi SPX (Wajib diisi)..." required>
-                </div>
+                    <div class="form-group">
+                        <label>Kecamatan</label>
+                        <input type="text" class="form-control" value="Jatinangor" readonly style="background-color: #e9ecef; cursor: not-allowed;">
+                    </div>
 
-                <div class="form-group">
-                    <label>Detail Alamat / Catatan Lengkap <span class="required-star">*</span></label>
-                    <input type="text" id="inputAddressDetail" class="form-control" placeholder="Contoh: RT.3/RW.4, Dsn Cinenggang, Dsa Cileles" required>
-                </div>
+                    <div class="form-group">
+                        <label>Kelurahan / Desa <span class="required-star">*</span></label>
+                        <select id="inputDesa" class="form-control" required>
+                            <option value="Cikeruh">Desa Cikeruh</option>
+                            <option value="Cilayung">Desa Cilayung</option>
+                            <option value="Cileles">Desa Cileles</option>
+                            <option value="Cipacing">Desa Cipacing</option>
+                            <option value="Cisempur">Desa Cisempur</option>
+                            <option value="Hegarmanah">Desa Hegarmanah</option>
+                            <option value="Jatimukti">Desa Jatimukti</option>
+                            <option value="Jatiroke">Desa Jatiroke</option>
+                            <option value="Mekargalih">Desa Mekargalih</option>
+                            <option value="Sayang">Desa Sayang</option>
+                            <option value="Cibeusi">Desa Cibeusi</option>
+                            <option value="Cintamulya">Desa Cintamulya</option>
+                        </select>
+                    </div>
 
-                <div class="form-group">
-                    <label>Patokan Lokasi <span class="required-star">*</span></label>
-                    <input type="text" id="inputPatokan" class="form-control" placeholder="Contoh: Dsn Cinenggang / Jalan Manglayang" required>
-                </div>
+                    <div class="form-group">
+                        <label>Tipe Paket & Nominal COD <span class="required-star">*</span></label>
+                        <div style="display: flex; gap: 10px;">
+                            <select id="inputTipe" class="form-control" style="flex: 1;" required>
+                                <option value="REGULER">REGULER</option>
+                                <option value="COD">COD</option>
+                                <option value="COD CEK DULU">COD CEK DULU</option>
+                            </select>
+                            <input type="number" id="inputNominalCod" class="form-control" placeholder="Nominal COD (Rp)" style="flex: 1;" value="0" required>
+                        </div>
+                    </div>
 
-                <div class="form-group">
-                    <label>Nama Penerima <span class="required-star">*</span></label>
-                    <input type="text" id="inputReceiver" class="form-control" placeholder="Contoh: Fitri Andriyani" required>
-                </div>
+                    <div class="form-group">
+                        <label>ID Paket / No Resi SPX <span class="required-star">*</span></label>
+                        <input type="text" id="inputIdPaket" class="form-control" placeholder="No Resi SPX (Wajib diisi)..." required>
+                    </div>
 
-                <button class="btn" id="btnSubmitForm" onclick="processInputPaketManual()">Proses & Simpan Paket</button>
+                    <div class="form-group">
+                        <label>Detail Alamat / Catatan Lengkap <span class="required-star">*</span></label>
+                        <input type="text" id="inputAddressDetail" class="form-control" placeholder="Contoh: RT.3/RW.4, Dsn Cinenggang, Dsa Cileles" required>
+                    </div>
+
+                    <div class="form-group">
+                        <label>Patokan Lokasi <span class="required-star">*</span></label>
+                        <input type="text" id="inputPatokan" class="form-control" placeholder="Contoh: Dsn Cinenggang / Jalan Manglayang" required>
+                    </div>
+
+                    <div class="form-group">
+                        <label>Nama Penerima <span class="required-star">*</span></label>
+                        <input type="text" id="inputReceiver" class="form-control" placeholder="Contoh: Fitri Andriyani" required>
+                    </div>
+
+                    <button class="btn" id="btnSubmitForm" onclick="processInputPaketManual()">Proses & Simpan Paket</button>
+                </div>
             </div>
 
             <!-- TABEL HASIL DAFTAR PAKET TER-INPUT -->
@@ -609,7 +648,7 @@
         let sortedPackages = [];
         let donutChart = null;
         let barChart = null;
-        let editingResi = null; // Status mode edit
+        let editingResi = null;
 
         const desaJatinangor = [
             "Cikeruh", "Cilayung", "Cileles", "Cipacing", "Cisempur", 
@@ -642,6 +681,20 @@
 
             document.getElementById(tabId).classList.add('active');
             btnElement.classList.add('active');
+        }
+
+        // TOGGLE BUKA / TUTUP FORM MANUAL
+        function toggleManualForm() {
+            let container = document.getElementById('manualFormContainer');
+            let icon = document.getElementById('toggleIcon');
+
+            if (container.style.display === 'block') {
+                container.style.display = 'none';
+                icon.innerText = '▼';
+            } else {
+                container.style.display = 'block';
+                icon.innerText = '▲';
+            }
         }
 
         // INISIALISASI GRAFIK CHART.JS
@@ -816,13 +869,11 @@
             let tipe = document.getElementById('inputTipe').value;
             let nominalCod = parseInt(document.getElementById('inputNominalCod').value) || 0;
 
-            // VALIDASI MANDATORI (WAJIB DIISI)
             if (!dateVal || !resi || !detailAddr || !patokanInput || !receiver) {
                 alert("⚠️ Semua kolom bertanda bintang (*) WAJIB DIISI lengkap!");
                 return;
             }
 
-            // Cek duplikasi jika bukan dalam mode edit
             if (!editingResi && inputPaketList.some(pkg => pkg.resi === resi)) {
                 alert(`🚫 No Resi ${resi} sudah ada di sistem!`);
                 return;
@@ -840,7 +891,6 @@
                 timestamp: Date.now()
             };
 
-            // Jika sedang mengedit resi lama yang diubah nomor resinya
             if (editingResi && editingResi !== resi) {
                 if (db) db.ref('paket_input/' + editingResi).remove();
             }
@@ -849,7 +899,7 @@
 
             alert(editingResi ? "✅ Data paket berhasil diperbarui!" : "✅ Data paket berhasil disimpan!");
 
-            // Reset Form & Status Edit
+            // Reset Form & Sembunyikan Kembali
             editingResi = null;
             document.getElementById('btnSubmitForm').innerText = "Proses & Simpan Paket";
             document.getElementById('inputIdPaket').value = '';
@@ -857,9 +907,11 @@
             document.getElementById('inputPatokan').value = '';
             document.getElementById('inputReceiver').value = '';
             document.getElementById('inputNominalCod').value = '0';
+            
+            toggleManualForm(); // Sembunyikan form setelah simpan
         }
 
-        // EDIT DATA PAKET
+        // EDIT DATA PAKET (OTOMATIS BUKA FORM)
         function editPaket(resi) {
             let pkg = inputPaketList.find(p => p.resi === resi);
             if (!pkg) return;
@@ -875,7 +927,13 @@
             document.getElementById('inputNominalCod').value = pkg.nominalCod || 0;
 
             document.getElementById('btnSubmitForm').innerText = "💾 Simpan Perubahan Edit";
-            window.scrollTo({ top: 0, behavior: 'smooth' });
+            
+            // Tampilkan form manual secara otomatis
+            let container = document.getElementById('manualFormContainer');
+            container.style.display = 'block';
+            document.getElementById('toggleIcon').innerText = '▲';
+
+            window.scrollTo({ top: 150, behavior: 'smooth' });
         }
 
         // HAPUS DATA PAKET
@@ -885,7 +943,7 @@
             }
         }
 
-        // SEARCH FILTER TABEL (Mencari segala bentuk kata kunci)
+        // SEARCH FILTER TABEL
         function filterPaketTable() {
             let input = document.getElementById("tableSearchInput").value.toLowerCase();
             let tbody = document.getElementById("inputPaketTableBody");
@@ -893,11 +951,7 @@
 
             for (let i = 0; i < tr.length; i++) {
                 let rowText = tr[i].innerText.toLowerCase();
-                if (rowText.indexOf(input) > -1) {
-                    tr[i].style.display = "";
-                } else {
-                    tr[i].style.display = "none";
-                }
+                tr[i].style.display = (rowText.indexOf(input) > -1) ? "" : "none";
             }
         }
 
@@ -933,7 +987,6 @@
                 `;
             });
 
-            // Jalankan filter jika sedang ada kata kunci di kolom search
             filterPaketTable();
         }
 
