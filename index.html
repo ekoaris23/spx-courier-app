@@ -478,6 +478,13 @@
             <div class="card">
                 <h2>Form Input Paket SPX</h2>
 
+                <!-- TANGGAL INPUT BERADA DI PALING ATAS -->
+                <div class="form-group">
+                    <label>Tanggal Input <span class="required-star">*</span></label>
+                    <input type="date" id="inputDate" class="form-control" required>
+                </div>
+
+                <!-- UPLOAD SCREENSHOT SCANNER -->
                 <div class="upload-box" onclick="document.getElementById('screenshotInput').click()">
                     <span style="font-size: 2rem;">📸</span>
                     <p>Upload Screenshot SPX (Mendukung Multi-Paket)</p>
@@ -492,11 +499,6 @@
                 </button>
 
                 <div id="manualFormContainer" class="manual-form-container">
-                    <div class="form-group">
-                        <label>Tanggal Input <span class="required-star">*</span></label>
-                        <input type="date" id="inputDate" class="form-control" required>
-                    </div>
-
                     <div class="form-group">
                         <label>Kecamatan</label>
                         <input type="text" class="form-control" value="Jatinangor" readonly style="background-color: #e9ecef; cursor: not-allowed;">
@@ -562,10 +564,8 @@
                     <h2 style="border-bottom: none; margin-bottom: 0; padding-bottom: 0;">Daftar List Paket Ter-Input</h2>
                     
                     <div style="display: flex; gap: 10px; flex-wrap: wrap; align-items: center;">
-                        <!-- Tombol Hapus Semua -->
                         <button class="btn-danger-all" onclick="deleteAllPaket()">🗑️ Hapus Semua Data</button>
 
-                        <!-- Dropdown Sortir -->
                         <select id="sortOptionSelect" class="form-control" style="width: 200px;" onchange="renderInputPaketTable()">
                             <option value="newest">📅 Sortir: Terbaru</option>
                             <option value="oldest">📅 Sortir: Terlama</option>
@@ -574,7 +574,6 @@
                             <option value="codHigh">💰 Sortir: COD Terbesar</option>
                         </select>
 
-                        <!-- Search Input Box -->
                         <div style="position: relative; width: 260px; max-width: 100%;">
                             <input type="text" id="tableSearchInput" class="form-control" placeholder="🔍 Cari Resi, Nama, Alamat..." onkeyup="filterPaketTable()">
                         </div>
@@ -953,7 +952,6 @@
             }
         }
 
-        // HAPUS SEMUA DATA DENGAN KONFIRMASI GANDA
         function deleteAllPaket() {
             if (inputPaketList.length === 0) {
                 alert("Tidak ada data paket untuk dihapus.");
@@ -986,7 +984,6 @@
             }
         }
 
-        // RENDER TABEL DENGAN OPSI SORTIR DEDIKASI
         function renderInputPaketTable() {
             let tbody = document.getElementById('inputPaketTableBody');
             let sortOption = document.getElementById('sortOptionSelect').value;
@@ -998,10 +995,8 @@
                 return;
             }
 
-            // Copy array untuk penyortiran tanpa merusak data asli
             let displayList = [...inputPaketList];
 
-            // EKSEKUSI SORTIR
             if (sortOption === 'newest') {
                 displayList.sort((a, b) => (b.timestamp || 0) - (a.timestamp || 0));
             } else if (sortOption === 'oldest') {
