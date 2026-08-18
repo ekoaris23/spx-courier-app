@@ -297,6 +297,19 @@
         .btn:hover { background: var(--primary-dark); }
         .btn-secondary { background: var(--secondary); }
 
+        .btn-danger-all {
+            background-color: var(--danger);
+            color: white;
+            padding: 8px 14px;
+            border: none;
+            border-radius: 6px;
+            font-weight: bold;
+            font-size: 0.85rem;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+        .btn-danger-all:hover { background-color: #bd2130; }
+
         .btn-toggle-manual {
             background-color: #f8f9fa;
             color: var(--secondary);
@@ -315,12 +328,10 @@
             transition: background 0.2s;
         }
 
-        .btn-toggle-manual:hover {
-            background-color: #edf2f7;
-        }
+        .btn-toggle-manual:hover { background-color: #edf2f7; }
 
         .manual-form-container {
-            display: none; /* Sembunyi secara default */
+            display: none;
             margin-top: 15px;
             padding-top: 15px;
             border-top: 2px dashed var(--border);
@@ -367,7 +378,6 @@
             border-radius: 4px;
         }
 
-        /* Action Buttons */
         .btn-action {
             padding: 5px 10px;
             border: none;
@@ -411,7 +421,6 @@
         <!-- TAB 1: DASHBOARD & GRAFIK -->
         <div id="dashTab" class="tab-content active">
             
-            <!-- Cards Ringkasan Metric -->
             <div class="metrics-grid">
                 <div class="metric-card">
                     <div class="metric-info">
@@ -446,7 +455,6 @@
                 </div>
             </div>
 
-            <!-- Graphs Section -->
             <div class="charts-grid">
                 <div class="chart-card">
                     <h3>📊 Status & Proporsi Tipe Paket</h3>
@@ -470,7 +478,6 @@
             <div class="card">
                 <h2>Form Input Paket SPX</h2>
 
-                <!-- UPLOAD SCREENSHOT SCANNER -->
                 <div class="upload-box" onclick="document.getElementById('screenshotInput').click()">
                     <span style="font-size: 2rem;">📸</span>
                     <p>Upload Screenshot SPX (Mendukung Multi-Paket)</p>
@@ -479,13 +486,11 @@
 
                 <div id="uploadAlert" class="upload-alert"></div>
 
-                <!-- TOMBOL TOGGLE UNTUK MENAMPILKAN FORM INPUT MANUAL -->
                 <button type="button" class="btn-toggle-manual" onclick="toggleManualForm()">
                     <span>✍️ Input Manual / Edit Detail Paket</span>
                     <span id="toggleIcon">▼</span>
                 </button>
 
-                <!-- CONTAINER FORM DETIL (TERSEMBUNYI SECARA DEFAULT) -->
                 <div id="manualFormContainer" class="manual-form-container">
                     <div class="form-group">
                         <label>Tanggal Input <span class="required-star">*</span></label>
@@ -553,12 +558,26 @@
 
             <!-- TABEL HASIL DAFTAR PAKET TER-INPUT -->
             <div class="card" id="inputTableCard" style="display: none;">
-                <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px; margin-bottom: 15px;">
+                <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px; margin-bottom: 15px;">
                     <h2 style="border-bottom: none; margin-bottom: 0; padding-bottom: 0;">Daftar List Paket Ter-Input</h2>
                     
-                    <!-- Search Input Box -->
-                    <div style="position: relative; width: 300px; max-width: 100%;">
-                        <input type="text" id="tableSearchInput" class="form-control" placeholder="🔍 Cari Resi, Nama, Alamat, Patokan..." onkeyup="filterPaketTable()">
+                    <div style="display: flex; gap: 10px; flex-wrap: wrap; align-items: center;">
+                        <!-- Tombol Hapus Semua -->
+                        <button class="btn-danger-all" onclick="deleteAllPaket()">🗑️ Hapus Semua Data</button>
+
+                        <!-- Dropdown Sortir -->
+                        <select id="sortOptionSelect" class="form-control" style="width: 200px;" onchange="renderInputPaketTable()">
+                            <option value="newest">📅 Sortir: Terbaru</option>
+                            <option value="oldest">📅 Sortir: Terlama</option>
+                            <option value="type">🏷️ Sortir: Tipe Paket</option>
+                            <option value="desa">🏡 Sortir: Desa (A-Z)</option>
+                            <option value="codHigh">💰 Sortir: COD Terbesar</option>
+                        </select>
+
+                        <!-- Search Input Box -->
+                        <div style="position: relative; width: 260px; max-width: 100%;">
+                            <input type="text" id="tableSearchInput" class="form-control" placeholder="🔍 Cari Resi, Nama, Alamat..." onkeyup="filterPaketTable()">
+                        </div>
                     </div>
                 </div>
 
@@ -683,7 +702,6 @@
             btnElement.classList.add('active');
         }
 
-        // TOGGLE BUKA / TUTUP FORM MANUAL
         function toggleManualForm() {
             let container = document.getElementById('manualFormContainer');
             let icon = document.getElementById('toggleIcon');
@@ -697,7 +715,6 @@
             }
         }
 
-        // INISIALISASI GRAFIK CHART.JS
         function initCharts() {
             const ctxDonut = document.getElementById('donutChart').getContext('2d');
             donutChart = new Chart(ctxDonut, {
@@ -733,7 +750,6 @@
             });
         }
 
-        // UPDATE DATA DASHBOARD & GRAFIK
         function updateDashboardMetrics() {
             let totalPaket = inputPaketList.length;
             let regulerCount = 0;
@@ -775,7 +791,6 @@
             }
         }
 
-        // UNGGAH & PROCESS SCREENSHOT
         function handleScreenshotUpload(event) {
             let file = event.target.files[0];
             let alertBox = document.getElementById('uploadAlert');
@@ -858,7 +873,6 @@
             alertBox.innerText = `✅ Berhasil tambah ${newAdded} paket baru!`;
         }
 
-        // INPUT / EDIT MANUAL DENGAN VALIDASI WAJIB ISI
         function processInputPaketManual() {
             let dateVal = document.getElementById('inputDate').value;
             let resi = document.getElementById('inputIdPaket').value.trim().toUpperCase();
@@ -899,7 +913,6 @@
 
             alert(editingResi ? "✅ Data paket berhasil diperbarui!" : "✅ Data paket berhasil disimpan!");
 
-            // Reset Form & Sembunyikan Kembali
             editingResi = null;
             document.getElementById('btnSubmitForm').innerText = "Proses & Simpan Paket";
             document.getElementById('inputIdPaket').value = '';
@@ -908,10 +921,9 @@
             document.getElementById('inputReceiver').value = '';
             document.getElementById('inputNominalCod').value = '0';
             
-            toggleManualForm(); // Sembunyikan form setelah simpan
+            toggleManualForm();
         }
 
-        // EDIT DATA PAKET (OTOMATIS BUKA FORM)
         function editPaket(resi) {
             let pkg = inputPaketList.find(p => p.resi === resi);
             if (!pkg) return;
@@ -928,7 +940,6 @@
 
             document.getElementById('btnSubmitForm').innerText = "💾 Simpan Perubahan Edit";
             
-            // Tampilkan form manual secara otomatis
             let container = document.getElementById('manualFormContainer');
             container.style.display = 'block';
             document.getElementById('toggleIcon').innerText = '▲';
@@ -936,14 +947,34 @@
             window.scrollTo({ top: 150, behavior: 'smooth' });
         }
 
-        // HAPUS DATA PAKET
         function deletePaket(resi) {
             if (confirm(`Apakah Anda yakin ingin menghapus resi ${resi}?`)) {
                 if (db) db.ref('paket_input/' + resi).remove();
             }
         }
 
-        // SEARCH FILTER TABEL
+        // HAPUS SEMUA DATA DENGAN KONFIRMASI GANDA
+        function deleteAllPaket() {
+            if (inputPaketList.length === 0) {
+                alert("Tidak ada data paket untuk dihapus.");
+                return;
+            }
+
+            let confirm1 = confirm("⚠️ PERINGATAN: Apakah Anda YAKIN ingin menghapus SELURUH data paket?");
+            if (confirm1) {
+                let confirm2 = confirm("🚨 KONFIRMASI TERAKHIR: Semua data akan terhapus PERMANEN dari Database. Lanjutkan?");
+                if (confirm2) {
+                    if (db) {
+                        db.ref('paket_input').remove().then(() => {
+                            alert("✅ Semua data paket berhasil dihapus bersih!");
+                        }).catch((err) => {
+                            alert("❌ Gagal menghapus data: " + err.message);
+                        });
+                    }
+                }
+            }
+        }
+
         function filterPaketTable() {
             let input = document.getElementById("tableSearchInput").value.toLowerCase();
             let tbody = document.getElementById("inputPaketTableBody");
@@ -955,9 +986,10 @@
             }
         }
 
-        // RENDER TABEL
+        // RENDER TABEL DENGAN OPSI SORTIR DEDIKASI
         function renderInputPaketTable() {
             let tbody = document.getElementById('inputPaketTableBody');
+            let sortOption = document.getElementById('sortOptionSelect').value;
             document.getElementById('inputTableCard').style.display = 'block';
             tbody.innerHTML = '';
 
@@ -966,7 +998,23 @@
                 return;
             }
 
-            inputPaketList.forEach((item, index) => {
+            // Copy array untuk penyortiran tanpa merusak data asli
+            let displayList = [...inputPaketList];
+
+            // EKSEKUSI SORTIR
+            if (sortOption === 'newest') {
+                displayList.sort((a, b) => (b.timestamp || 0) - (a.timestamp || 0));
+            } else if (sortOption === 'oldest') {
+                displayList.sort((a, b) => (a.timestamp || 0) - (b.timestamp || 0));
+            } else if (sortOption === 'type') {
+                displayList.sort((a, b) => a.tipe.localeCompare(b.tipe));
+            } else if (sortOption === 'desa') {
+                displayList.sort((a, b) => a.desa.localeCompare(b.desa));
+            } else if (sortOption === 'codHigh') {
+                displayList.sort((a, b) => (b.nominalCod || 0) - (a.nominalCod || 0));
+            }
+
+            displayList.forEach((item, index) => {
                 let badgeClass = item.tipe === 'REGULER' ? 'badge-reg' : (item.tipe === 'COD' ? 'badge-cod' : 'badge-cek');
                 tbody.innerHTML += `
                     <tr>
