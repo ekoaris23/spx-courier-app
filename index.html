@@ -930,7 +930,7 @@
             } else {
                 riderManifestList.push({
                     resi: resiUpper,
-                    receiver: "Penerima Belum Terdata",
+                    receiver: "-",
                     detailAddr: "Alamat belum di-input admin",
                     patokan: "-",
                     desa: "Umum",
@@ -983,7 +983,7 @@
                     <tr>
                         <td>${index + 1}</td>
                         <td><strong>${item.resi}</strong></td>
-                        <td>${item.receiver}</td>
+                        <td>${item.receiver || '-'}</td>
                         <td>${item.detailAddr}</td>
                         <td><span class="badge-patokan">${item.patokan}</span></td>
                         <td>Desa ${item.desa}</td>
@@ -1180,29 +1180,26 @@
 
         function extractPatokan(text) {
             if (!text) return "-";
-            let dsnMatch = text.match(/(?:dsn|dusun)\.?\s*([a-zA-Z0-9\s]+?)(?:,|\.| RT| RW| Dsa| Ds| Desa|$)/i);
+            let dsnMatch = text.match(/(?:dsn|dusun)\.?\s*([a-zA-Z0-9\s]+?)(?:,|\.|\bRT|\bRW|\bDsa|\bDs|\bDesa|$)/i);
             if (dsnMatch) return "Dsn " + dsnMatch[1].trim();
-            let jlnMatch = text.match(/(?:jalan|jln|jl)\.?\s*([a-zA-Z0-9\s]+?)(?:,|\.| RT| RW| Dsa| Ds| Desa|$)/i);
+            let jlnMatch = text.match(/(?:jalan|jln|jl)\.?\s*([a-zA-Z0-9\s]+?)(?:,|\.|\bRT|\bRW|\bDsa|\bDs|\bDesa|$)/i);
             if (jlnMatch) return "Jln " + jlnMatch[1].trim();
             return "-";
         }
 
-        // PEMBERSIHAN NAMA PENERIMA DARI HARDCODED "Penerima Paket"
         function extractReceiverName(blockText) {
             let lines = blockText.split('\n').map(l => l.trim()).filter(l => l.length > 0);
             
             for (let line of lines) {
-                // Abaikan garis yang berisi kata umum SPX / Label
                 if (/SPXID|COD|IDR|HUB|JATINANGOR|REGULER|CEK DULU|Standard|Penerima Paket|Nama Penerima/i.test(line)) continue;
                 if (/dsa|ds|desa|kel|kelurahan|rt|rw|dsn|dusun|jl|jalan|kab|kec/i.test(line)) continue;
                 if (/^\d+$/.test(line) || line.length < 3) continue;
 
-                // Jika berupa teks nama valid
                 if (/^[a-zA-Z\s\.'\(\)]+$/.test(line)) {
                     return line;
                 }
             }
-            return "-"; // Jika tidak terdeteksi, default "-"
+            return "-";
         }
 
         function parseMultiSpxOcrText(rawText) {
