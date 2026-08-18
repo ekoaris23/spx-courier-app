@@ -415,10 +415,16 @@
             font-weight: bold;
             cursor: pointer;
             transition: opacity 0.2s;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
         }
-        .btn-action:hover { opacity: 0.8; }
+        .btn-action:hover { opacity: 0.85; }
         .btn-edit { background-color: #ffc107; color: #333; margin-right: 4px; }
-        .btn-delete { background-color: #dc3545; color: white; }
+        .btn-delete { background-color: #dc3545; color: white; margin-right: 4px; }
+        .btn-wa { background-color: #25D366; color: white; margin-right: 4px; }
+        .btn-phone { background-color: #007bff; color: white; }
 
         .tab-content { display: none; }
         .tab-content.active { display: block; }
@@ -636,6 +642,11 @@
                         <input type="text" id="inputReceiver" class="form-control" placeholder="Contoh: Fitri Andriyani" required>
                     </div>
 
+                    <div class="form-group">
+                        <label>No. HP / WhatsApp Penerima</label>
+                        <input type="text" id="inputPhone" class="form-control" placeholder="Contoh: 081234567890">
+                    </div>
+
                     <button class="btn" id="btnSubmitForm" onclick="processInputPaketManual()">Proses & Simpan Paket</button>
                 </div>
             </div>
@@ -669,6 +680,7 @@
                                 <th>No</th>
                                 <th>No Resi SPX</th>
                                 <th>Nama Penerima</th>
+                                <th>No. HP / WA</th>
                                 <th>Alamat Lengkap</th>
                                 <th>Patokan</th>
                                 <th>Desa / Kelurahan</th>
@@ -741,6 +753,7 @@
                                 <th>No</th>
                                 <th>No Resi SPX</th>
                                 <th>Nama Penerima</th>
+                                <th>No. HP / WA</th>
                                 <th>Alamat Lengkap</th>
                                 <th>Patokan</th>
                                 <th>Desa</th>
@@ -751,7 +764,7 @@
                         </thead>
                         <tbody id="riderManifestTableBody">
                             <tr>
-                                <td colspan="9" style="text-align: center; color: var(--text-muted);">Belum ada barang yang discan oleh Rider. Silakan scan resi terlebih dahulu.</td>
+                                <td colspan="10" style="text-align: center; color: var(--text-muted);">Belum ada barang yang discan oleh Rider. Silakan scan resi terlebih dahulu.</td>
                             </tr>
                         </tbody>
                     </table>
@@ -845,6 +858,29 @@
             }
         });
 
+        // FORMAT NOMOR TELEPON KE KONSTRUKSI WHATSAPP (628xxx)
+        function formatPhoneToWa(phoneStr) {
+            if (!phoneStr) return null;
+            let cleaned = phoneStr.replace(/[^\d]/g, '');
+            if (!cleaned) return null;
+
+            if (cleaned.startsWith('0')) {
+                cleaned = '62' + cleaned.substring(1);
+            } else if (cleaned.startsWith('8')) {
+                cleaned = '62' + cleaned;
+            }
+            return cleaned;
+        }
+
+        // BUAT LINK WHATSAPP DENGAN PESAN OTOMATIS
+        function getWaLink(phoneStr, resi, name) {
+            let waNum = formatPhoneToWa(phoneStr);
+            if (!waNum) return null;
+            
+            let message = `Halo ${name || 'Kak'}, kami dari Kurir SPX Express Paket Gaskeun. Paket Anda dengan No Resi *${resi}* sedang dalam perjalanan pengiriman hari ini. Mohon pastikan penerima berada di tempat. Terima kasih!`;
+            return `https://wa.me/${waNum}?text=${encodeURIComponent(message)}`;
+        }
+
         // EFEK SUARA "BIP" (WEB AUDIO API)
         function playBeepSound() {
             try {
@@ -931,6 +967,7 @@
                 riderManifestList.push({
                     resi: resiUpper,
                     receiver: "-",
+                    phone: "-",
                     detailAddr: "Alamat belum di-input admin",
                     patokan: "-",
                     desa: "Umum",
@@ -969,7 +1006,7 @@
             let totalCod = 0;
 
             if (riderManifestList.length === 0) {
-                tbody.innerHTML = `<tr><td colspan="9" style="text-align: center; color: var(--text-muted);">Belum ada barang yang discan oleh Rider. Silakan scan resi terlebih dahulu.</td></tr>`;
+                tbody.innerHTML = `<tr><td colspan="10" style="text-align: center; color: var(--text-muted);">Belum ada barang yang discan oleh Rider. Silakan scan resi terlebih dahulu.</td></tr>`;
                 document.getElementById('riderTotalItems').innerText = '0 Paket';
                 document.getElementById('riderTotalCod').innerText = 'Rp 0';
                 return;
@@ -979,11 +1016,17 @@
                 totalCod += (item.nominalCod || 0);
                 let badgeClass = item.tipe === 'REGULER' ? 'badge-reg' : (item.tipe === 'COD' ? 'badge-cod' : 'badge-cek');
 
+                let waLink = getWaLink(item.phone, item.resi, item.receiver);
+                let phoneBtn = item.phone ? `<a href="tel:${item.phone}" class="btn-action btn-phone" title="Telepon Langsung">📞 Call</a>` : '';
+                let waBtn = waLink ? `<a href="${waLink}" target="_blank" class="btn-action btn-wa" title="Chat WhatsApp">💬 WA</a>` : '';
+                let contactDisplay = (item.phone && item.phone !== '-') ? `<div><strong>${item.phone}</strong></div><div style="margin-top: 4px;">${waBtn}${phoneBtn}</div>` : '-';
+
                 tbody.innerHTML += `
                     <tr>
                         <td>${index + 1}</td>
                         <td><strong>${item.resi}</strong></td>
                         <td>${item.receiver || '-'}</td>
+                        <td style="white-space: nowrap;">${contactDisplay}</td>
                         <td>${item.detailAddr}</td>
                         <td><span class="badge-patokan">${item.patokan}</span></td>
                         <td>Desa ${item.desa}</td>
@@ -1180,9 +1223,9 @@
 
         function extractPatokan(text) {
             if (!text) return "-";
-            let dsnMatch = text.match(/(?:dsn|dusun)\.?\s*([a-zA-Z0-9\s]+?)(?:,|\.|\bRT|\bRW|\bDsa|\bDs|\bDesa|$)/i);
+            let dsnMatch = text.match(/(?:dsn|dusun)\.?\s*([a-zA-Z0-9\s]+?)(?:,|\.| RT| RW| Dsa| Ds| Desa|$)/i);
             if (dsnMatch) return "Dsn " + dsnMatch[1].trim();
-            let jlnMatch = text.match(/(?:jalan|jln|jl)\.?\s*([a-zA-Z0-9\s]+?)(?:,|\.|\bRT|\bRW|\bDsa|\bDs|\bDesa|$)/i);
+            let jlnMatch = text.match(/(?:jalan|jln|jl)\.?\s*([a-zA-Z0-9\s]+?)(?:,|\.| RT| RW| Dsa| Ds| Desa|$)/i);
             if (jlnMatch) return "Jln " + jlnMatch[1].trim();
             return "-";
         }
@@ -1198,6 +1241,14 @@
                 if (/^[a-zA-Z\s\.'\(\)]+$/.test(line)) {
                     return line;
                 }
+            }
+            return "-";
+        }
+
+        function extractPhoneNumber(blockText) {
+            let phoneMatch = blockText.match(/(?:08|628|\+628)\d{8,12}/);
+            if (phoneMatch) {
+                return phoneMatch[0];
             }
             return "-";
         }
@@ -1231,6 +1282,7 @@
                 let detailAddr = lines.find(l => /dsa|ds|desa|kel|kelurahan|rt|rw|dsn|dusun|jl|jalan/i.test(l)) || "-";
                 let patokan = extractPatokan(detailAddr);
                 let receiverName = extractReceiverName(blockText);
+                let phoneNumber = extractPhoneNumber(blockText);
 
                 let desaFound = "Cileles";
                 for (let d of desaJatinangor) {
@@ -1246,7 +1298,7 @@
                 if (codMatch) nominalCod = parseInt(codMatch[1].replace(/[^\d]/g, '')) || 0;
 
                 let newPaket = {
-                    date: dateVal, resi: resi, desa: desaFound, receiver: receiverName,
+                    date: dateVal, resi: resi, desa: desaFound, receiver: receiverName, phone: phoneNumber,
                     detailAddr: detailAddr, patokan: patokan, tipe: tipe, nominalCod: nominalCod, timestamp: Date.now()
                 };
 
@@ -1266,6 +1318,7 @@
             let detailAddr = document.getElementById('inputAddressDetail').value.trim();
             let patokanInput = document.getElementById('inputPatokan').value.trim();
             let receiver = document.getElementById('inputReceiver').value.trim();
+            let phoneInput = document.getElementById('inputPhone').value.trim();
             let tipe = document.getElementById('inputTipe').value;
             let nominalCod = parseInt(document.getElementById('inputNominalCod').value) || 0;
 
@@ -1284,6 +1337,7 @@
                 resi: resi,
                 desa: desa,
                 receiver: receiver,
+                phone: phoneInput || "-",
                 detailAddr: detailAddr,
                 patokan: patokanInput,
                 tipe: tipe,
@@ -1305,6 +1359,7 @@
             document.getElementById('inputAddressDetail').value = '';
             document.getElementById('inputPatokan').value = '';
             document.getElementById('inputReceiver').value = '';
+            document.getElementById('inputPhone').value = '';
             document.getElementById('inputNominalCod').value = '0';
             
             toggleManualForm();
@@ -1321,6 +1376,7 @@
             document.getElementById('inputAddressDetail').value = pkg.detailAddr;
             document.getElementById('inputPatokan').value = pkg.patokan;
             document.getElementById('inputReceiver').value = pkg.receiver;
+            document.getElementById('inputPhone').value = pkg.phone || '';
             document.getElementById('inputTipe').value = pkg.tipe;
             document.getElementById('inputNominalCod').value = pkg.nominalCod || 0;
 
@@ -1378,7 +1434,7 @@
             tbody.innerHTML = '';
 
             if (inputPaketList.length === 0) {
-                tbody.innerHTML = `<tr><td colspan="10" style="text-align:center; color: var(--text-muted);">Belum ada data paket yang ter-input.</td></tr>`;
+                tbody.innerHTML = `<tr><td colspan="11" style="text-align:center; color: var(--text-muted);">Belum ada data paket yang ter-input.</td></tr>`;
                 return;
             }
 
@@ -1398,11 +1454,18 @@
 
             displayList.forEach((item, index) => {
                 let badgeClass = item.tipe === 'REGULER' ? 'badge-reg' : (item.tipe === 'COD' ? 'badge-cod' : 'badge-cek');
+                
+                let waLink = getWaLink(item.phone, item.resi, item.receiver);
+                let phoneBtn = item.phone ? `<a href="tel:${item.phone}" class="btn-action btn-phone" title="Telepon Langsung">📞 Call</a>` : '';
+                let waBtn = waLink ? `<a href="${waLink}" target="_blank" class="btn-action btn-wa" title="Chat WhatsApp">💬 WA</a>` : '';
+                let contactDisplay = (item.phone && item.phone !== '-') ? `<div><strong>${item.phone}</strong></div><div style="margin-top: 4px;">${waBtn}${phoneBtn}</div>` : '-';
+
                 tbody.innerHTML += `
                     <tr>
                         <td>${index + 1}</td>
                         <td><strong>${item.resi}</strong></td>
                         <td>${item.receiver || '-'}</td>
+                        <td style="white-space: nowrap;">${contactDisplay}</td>
                         <td>${item.detailAddr || '-'}</td>
                         <td><span class="badge-patokan">${item.patokan || '-'}</span></td>
                         <td>Desa ${item.desa}</td>
