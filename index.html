@@ -1241,6 +1241,7 @@
             return "-";
         }
 
+        // PENYESUAIAN OCR KHUSUS NAMA PENERIMA (MENGABAIKAN KATA "RECEIVER INFORMATION")
         function parseMultiSpxOcrText(rawText) {
             let alertBox = document.getElementById('uploadAlert');
             let dateVal = document.getElementById('inputDate').value;
@@ -1269,7 +1270,8 @@
                     addressText = (recvIndex !== -1) ? blockText.substring(0, recvIndex) : blockText;
                 }
                 
-                let detailAddr = addressText.replace(/SPXID[A-Z0-9]+/gi, '').replace(/[\r\n]+/g, ', ').trim();
+                let detailAddr = addressText.replace(/SPXID[A-Z0-9]+/gi, '').replace(/[
+]+/g, ', ').trim();
                 detailAddr = detailAddr.replace(/^[\s,]+|[\s,]+$/g, '');
 
                 let receiverName = "-";
@@ -1286,9 +1288,13 @@
                     phoneNumber = phoneMatch[0];
                 }
 
-                let lines = receiverBlock.split(/[\r\n]+/).map(l => l.trim()).filter(l => l.length > 0);
+                // EKSTRAKSI KHUSUS NAMA PENERIMA: Mengabaikan teks "Receiver Information", "Tel:", No HP, dll.
+                let lines = receiverBlock.split(/[
+]+/).map(l => l.trim()).filter(l => l.length > 0);
                 for (let line of lines) {
-                    if (/Receiver\s*Information|Tel:|Tel|\+62|08|Assigned|Hub/i.test(line)) continue;
+                    if (/Receiver/i.test(line) || /Information/i.test(line) || /Tel:/i.test(line) || /Tel/i.test(line) || /\+62/i.test(line) || /08\d+/i.test(line) || /Assigned/i.test(line) || /Hub/i.test(line)) {
+                        continue;
+                    }
                     if (line.length >= 2) {
                         receiverName = line;
                         break;
