@@ -10,6 +10,9 @@
     <!-- Chart.js untuk Grafik Dashboard -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
+    <!-- Library HTML5-QRCode Scanner Kamera HP -->
+    <script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
+
     <!-- Firebase SDK -->
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-database-compat.js"></script>
@@ -459,6 +462,17 @@
             display: none;
             font-weight: bold;
         }
+
+        /* CAMERA SCANNER STYLING */
+        #reader {
+            width: 100%;
+            max-width: 480px;
+            margin: 15px auto;
+            border: 2px solid var(--primary);
+            border-radius: 12px;
+            overflow: hidden;
+            display: none;
+        }
     </style>
 </head>
 <body>
@@ -675,14 +689,73 @@
         <div id="manifestTab" class="tab-content active">
             <div class="card">
                 <h2>Plotting Area & Manifest Karcis Rider</h2>
+                
                 <div class="form-group">
                     <label>Pilih Kurir Rider Motor</label>
                     <select id="riderSelect" class="form-control">
-                        <option value="Rider A (Dsn Cinenggang & Sekitar)">Kurir A</option>
-                        <option value="Rider B (Jl. Achmad Syam)">Kurir B</option>
+                        <option value="Kurir A (Rider Motor 1)">Kurir A</option>
+                        <option value="Kurir B (Rider Motor 2)">Kurir B</option>
+                        <option value="Kurir C (Rider Motor 3)">Kurir C</option>
                     </select>
                 </div>
-                <button class="btn" onclick="generateRiderManifest()">Generate Karcis Manifest Rider</button>
+
+                <div style="display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 15px;">
+                    <button class="btn" id="btnToggleCam" onclick="toggleCameraScanner()" style="flex: 1; background-color: var(--secondary);">📷 Buka Kamera Scan Barcode Resi</button>
+                </div>
+
+                <!-- KOTAK KAMERA HTML5 QRCODE -->
+                <div id="reader"></div>
+
+                <div class="form-group" style="margin-top: 15px;">
+                    <label>Atau Input / Scan Resi Manual (Rider)</label>
+                    <div style="display: flex; gap: 10px;">
+                        <input type="text" id="riderManualScanInput" class="form-control" placeholder="Ketik / Scan resi SPX di sini..." onkeypress="handleRiderManualEnter(event)">
+                        <button class="btn" style="width: 130px;" onclick="addResiToRiderManifest(document.getElementById('riderManualScanInput').value)">+ Tambah</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- TABEL DAFTAR BARANG YANG DIBAWA RIDER -->
+            <div class="card" id="riderManifestCard">
+                <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px; margin-bottom: 15px;">
+                    <h2>📦 List Barang yang Akan Dibawa Rider</h2>
+                    <button class="btn-danger-all" onclick="clearRiderManifest()">🗑️ Bersihkan List Rider</button>
+                </div>
+
+                <!-- RINGKASAN JUMLAH & COD RIDER -->
+                <div style="display: flex; gap: 15px; margin-bottom: 15px; flex-wrap: wrap;">
+                    <div style="background: #fff5f2; padding: 10px 15px; border-radius: 8px; border-left: 4px solid var(--primary); flex: 1; min-width: 180px;">
+                        <span style="font-size: 0.8rem; color: var(--text-muted); font-weight: bold;">TOTAL BARANG DIBAWA</span>
+                        <h3 id="riderTotalItems" style="color: var(--primary); font-size: 1.4rem;">0 Paket</h3>
+                    </div>
+                    <div style="background: #e8f5e9; padding: 10px 15px; border-radius: 8px; border-left: 4px solid var(--success); flex: 1; min-width: 180px;">
+                        <span style="font-size: 0.8rem; color: var(--text-muted); font-weight: bold;">TOTAL NOMINAL COD</span>
+                        <h3 id="riderTotalCod" style="color: var(--success); font-size: 1.4rem;">Rp 0</h3>
+                    </div>
+                </div>
+
+                <div class="table-responsive">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>No</th>
+                                <th>No Resi SPX</th>
+                                <th>Nama Penerima</th>
+                                <th>Alamat Lengkap</th>
+                                <th>Patokan</th>
+                                <th>Desa</th>
+                                <th>Tipe</th>
+                                <th>COD (Rp)</th>
+                                <th style="text-align: center;">Aksi</th>
+                            </tr>
+                        </thead>
+                        <tbody id="riderManifestTableBody">
+                            <tr>
+                                <td colspan="9" style="text-align: center; color: var(--text-muted);">Belum ada barang yang discan oleh Rider. Silakan scan resi terlebih dahulu.</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
             </div>
         </div>
 
@@ -740,12 +813,14 @@
         } catch (e) {}
 
         let inputPaketList = [];
-        let sortedPackages = [];
+        let riderManifestList = [];
         let donutChart = null;
         let barChart = null;
         let editingResi = null;
         let pendingTabTarget = null;
         let pendingBtnElement = null;
+        let html5QrcodeScanner = null;
+        let isCameraRunning = false;
 
         const desaJatinangor = [
             "Cikeruh", "Cilayung", "Cileles", "Cipacing", "Cisempur", 
@@ -770,6 +845,165 @@
             }
         });
 
+        // EFEK SUARA "BIP" (WEB AUDIO API)
+        function playBeepSound() {
+            try {
+                const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+                const oscillator = audioCtx.createOscillator();
+                const gainNode = audioCtx.createGain();
+
+                oscillator.type = 'sine';
+                oscillator.frequency.setValueAtTime(1200, audioCtx.currentTime); // Nada Beep Nyaring
+                gainNode.gain.setValueAtTime(0.15, audioCtx.currentTime);
+
+                oscillator.connect(gainNode);
+                gainNode.connect(audioCtx.destination);
+
+                oscillator.start();
+                oscillator.stop(audioCtx.currentTime + 0.12); // Durasi 0.12 detik
+            } catch (e) {
+                console.log("Audio not allowed yet", e);
+            }
+        }
+
+        // TOGGLE KAMERA SCANNER RIDER
+        function toggleCameraScanner() {
+            let readerDiv = document.getElementById('reader');
+            let btnCam = document.getElementById('btnToggleCam');
+
+            if (isCameraRunning) {
+                if (html5QrcodeScanner) {
+                    html5QrcodeScanner.stop().then(() => {
+                        readerDiv.style.display = 'none';
+                        btnCam.innerText = '📷 Buka Kamera Scan Barcode Resi';
+                        btnCam.style.backgroundColor = 'var(--secondary)';
+                        isCameraRunning = false;
+                    });
+                }
+            } else {
+                readerDiv.style.display = 'block';
+                btnCam.innerText = '🛑 Tutup Kamera Scanner';
+                btnCam.style.backgroundColor = 'var(--danger)';
+
+                html5QrcodeScanner = new Html5Qrcode("reader");
+                const config = { fps: 10, qrbox: { width: 250, height: 180 } };
+
+                html5QrcodeScanner.start(
+                    { facingMode: "environment" },
+                    config,
+                    onScanSuccess
+                ).catch(err => {
+                    alert("⚠️ Kamera tidak dapat diakses! Pastikan izin kamera telah diberikan.");
+                    readerDiv.style.display = 'none';
+                    btnCam.innerText = '📷 Buka Kamera Scan Barcode Resi';
+                    btnCam.style.backgroundColor = 'var(--secondary)';
+                    isCameraRunning = false;
+                });
+
+                isCameraRunning = true;
+            }
+        }
+
+        function onScanSuccess(decodedText, decodedResult) {
+            playBeepSound(); // Bunyi BIP!
+            addResiToRiderManifest(decodedText);
+        }
+
+        // TAMBAH RESI KE LIST RIDER
+        function addResiToRiderManifest(rawResi) {
+            if (!rawResi) return;
+            let resiUpper = rawResi.trim().toUpperCase();
+
+            // Ekstrak kode SPXID dari teks jika discan berupa QR komplit
+            let matchResi = resiUpper.match(/SPXID[A-Z0-9]+/i);
+            if (matchResi) resiUpper = matchResi[0].toUpperCase();
+
+            // Cek jika sudah dimasukkan ke manifest rider
+            if (riderManifestList.some(item => item.resi === resiUpper)) {
+                alert(`⚠️ Resi ${resiUpper} sudah ada di list bawaan Rider!`);
+                document.getElementById('riderManualScanInput').value = '';
+                return;
+            }
+
+            // Cari di database master paket input
+            let pkgData = inputPaketList.find(p => p.resi === resiUpper);
+
+            if (pkgData) {
+                riderManifestList.push(pkgData);
+            } else {
+                // Jika belum di-input admin, tetap masukkan sebagai resi manual
+                riderManifestList.push({
+                    resi: resiUpper,
+                    receiver: "Penerima Belum Terdata",
+                    detailAddr: "Alamat belum di-input admin",
+                    patokan: "-",
+                    desa: "Umum",
+                    tipe: "REGULER",
+                    nominalCod: 0
+                });
+            }
+
+            playBeepSound(); // Suara Beep jika input manual
+            renderRiderManifestTable();
+            document.getElementById('riderManualScanInput').value = '';
+        }
+
+        function handleRiderManualEnter(e) {
+            if (e.key === 'Enter') {
+                addResiToRiderManifest(e.target.value);
+            }
+        }
+
+        function removeRiderItem(resi) {
+            riderManifestList = riderManifestList.filter(i => i.resi !== resi);
+            renderRiderManifestTable();
+        }
+
+        function clearRiderManifest() {
+            if (confirm("Apakah Anda yakin ingin membersihkan seluruh daftar barang bawaan rider ini?")) {
+                riderManifestList = [];
+                renderRiderManifestTable();
+            }
+        }
+
+        function renderRiderManifestTable() {
+            let tbody = document.getElementById('riderManifestTableBody');
+            tbody.innerHTML = '';
+
+            let totalCod = 0;
+
+            if (riderManifestList.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="9" style="text-align: center; color: var(--text-muted);">Belum ada barang yang discan oleh Rider. Silakan scan resi terlebih dahulu.</td></tr>`;
+                document.getElementById('riderTotalItems').innerText = '0 Paket';
+                document.getElementById('riderTotalCod').innerText = 'Rp 0';
+                return;
+            }
+
+            riderManifestList.forEach((item, index) => {
+                totalCod += (item.nominalCod || 0);
+                let badgeClass = item.tipe === 'REGULER' ? 'badge-reg' : (item.tipe === 'COD' ? 'badge-cod' : 'badge-cek');
+
+                tbody.innerHTML += `
+                    <tr>
+                        <td>${index + 1}</td>
+                        <td><strong>${item.resi}</strong></td>
+                        <td>${item.receiver}</td>
+                        <td>${item.detailAddr}</td>
+                        <td><span class="badge-patokan">${item.patokan}</span></td>
+                        <td>Desa ${item.desa}</td>
+                        <td><span class="badge ${badgeClass}">${item.tipe}</span></td>
+                        <td>Rp ${(item.nominalCod || 0).toLocaleString()}</td>
+                        <td style="text-align: center;">
+                            <button class="btn-action btn-delete" onclick="removeRiderItem('${item.resi}')">❌ Batal</button>
+                        </td>
+                    </tr>
+                `;
+            });
+
+            document.getElementById('riderTotalItems').innerText = riderManifestList.length + ' Paket';
+            document.getElementById('riderTotalCod').innerText = 'Rp ' + totalCod.toLocaleString();
+        }
+
         // AUTENTIKASI ADMIN & TAB SWITCHING PROTEKSI
         function isAdminLoggedIn() {
             return sessionStorage.getItem('spx_admin_logged') === 'true';
@@ -786,7 +1020,6 @@
         }
 
         function switchTab(tabId, btnElement) {
-            // Proteksi Khusus Tab Admin (dashTab & inputTab)
             if ((tabId === 'dashTab' || tabId === 'inputTab') && !isAdminLoggedIn()) {
                 pendingTabTarget = tabId;
                 pendingBtnElement = btnElement;
@@ -838,7 +1071,6 @@
                 sessionStorage.removeItem('spx_admin_logged');
                 checkAdminAuthState();
                 alert("Anda telah keluar dari mode Admin.");
-                // Pindah kembali ke tab publik (Manifest Rider)
                 let publicBtn = document.querySelectorAll('.step-btn')[2];
                 executeTabSwitch('manifestTab', publicBtn);
             }
@@ -1175,8 +1407,6 @@
 
             filterPaketTable();
         }
-
-        function generateRiderManifest() { alert("Manifest Rider Berhasil Dibuat."); }
     </script>
 </body>
 </html>
