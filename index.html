@@ -479,6 +479,31 @@
             overflow: hidden;
             display: none;
         }
+
+        .progress-bar-bg {
+            background-color: #e2e8f0;
+            border-radius: 10px;
+            overflow: hidden;
+            height: 18px;
+            width: 100%;
+            position: relative;
+        }
+        .progress-bar-fill {
+            background-color: var(--success);
+            height: 100%;
+            border-radius: 10px;
+            transition: width 0.3s ease;
+        }
+        .progress-bar-text {
+            position: absolute;
+            top: 0; left: 0; right: 0; bottom: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.72rem;
+            font-weight: bold;
+            color: #333;
+        }
     </style>
 </head>
 <body>
@@ -501,9 +526,10 @@
         <!-- Navigation Bar Tabs -->
         <div class="step-nav">
             <button class="step-btn admin-restricted" onclick="switchTab('dashTab', this)">📈 Dashboard & Grafik</button>
+            <button class="step-btn admin-restricted" onclick="switchTab('riderTab', this)">🛵 Daftar Rider</button>
             <button class="step-btn admin-restricted" onclick="switchTab('inputTab', this)">📦 Input Paket SPX</button>
             <button class="step-btn active" onclick="switchTab('manifestTab', this)">📝 Manifest Rider</button>
-            <button class="step-btn" onclick="switchTab('waTab', this)">📲 Verifikasi WA POD</button>
+            <button class="step-btn" onclick="switchTab('performanceTab', this)">🏆 Performa Rider</button>
         </div>
 
         <!-- TAB 1: DASHBOARD & GRAFIK (ADMIN ONLY) -->
@@ -559,7 +585,60 @@
             </div>
         </div>
 
-        <!-- TAB 2: INPUT PAKET (ADMIN ONLY) -->
+        <!-- TAB 2: DAFTAR RIDER (ADMIN ONLY) -->
+        <div id="riderTab" class="tab-content">
+            <div class="card">
+                <h2>Kelola Data Rider Kurir Basecamp</h2>
+
+                <div class="form-group">
+                    <label>Nama Rider <span class="required-star">*</span></label>
+                    <input type="text" id="riderInputName" class="form-control" placeholder="Contoh: Budi Santoso" required>
+                </div>
+
+                <div class="form-group">
+                    <label>Jenis / Tipe Motor <span class="required-star">*</span></label>
+                    <input type="text" id="riderInputMotor" class="form-control" placeholder="Contoh: Honda Vario 125 (D 4567 ABC)" required>
+                </div>
+
+                <div class="form-group">
+                    <label>Umur (Tahun) <span class="required-star">*</span></label>
+                    <input type="number" id="riderInputAge" class="form-control" placeholder="Contoh: 26" required>
+                </div>
+
+                <div class="form-group">
+                    <label>Nomor WhatsApp <span class="required-star">*</span></label>
+                    <input type="text" id="riderInputWa" class="form-control" placeholder="Contoh: 081234567890" required>
+                </div>
+
+                <button class="btn" id="btnSubmitRider" onclick="saveRiderData()">Simpan Data Rider</button>
+            </div>
+
+            <!-- TABEL DAFTAR RIDER -->
+            <div class="card">
+                <h2>🛵 List Rider Aktif</h2>
+                <div class="table-responsive">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>No</th>
+                                <th>Nama Rider</th>
+                                <th>Motor</th>
+                                <th>Umur</th>
+                                <th>Nomor WhatsApp</th>
+                                <th style="text-align: center;">Aksi</th>
+                            </tr>
+                        </thead>
+                        <tbody id="riderTableBody">
+                            <tr>
+                                <td colspan="6" style="text-align: center; color: var(--text-muted);">Belum ada data rider. Silakan tambahkan rider di atas.</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- TAB 3: INPUT PAKET (ADMIN ONLY) -->
         <div id="inputTab" class="tab-content">
             <div class="card">
                 <h2>Form Input Paket SPX</h2>
@@ -693,17 +772,15 @@
             </div>
         </div>
 
-        <!-- TAB 3: MANIFEST RIDER -->
+        <!-- TAB 4: MANIFEST RIDER -->
         <div id="manifestTab" class="tab-content active">
             <div class="card">
                 <h2>Plotting Area & Manifest Karcis Rider</h2>
                 
                 <div class="form-group">
-                    <label>Pilih Kurir Rider Motor</label>
+                    <label>Pilih Kurir Rider Motor Aktif</label>
                     <select id="riderSelect" class="form-control">
-                        <option value="Kurir A (Rider Motor 1)">Kurir A</option>
-                        <option value="Kurir B (Rider Motor 2)">Kurir B</option>
-                        <option value="Kurir C (Rider Motor 3)">Kurir C</option>
+                        <option value="">-- Pilih Rider --</option>
                     </select>
                 </div>
 
@@ -753,12 +830,13 @@
                                 <th>Desa</th>
                                 <th>Tipe</th>
                                 <th>COD (Rp)</th>
+                                <th>Status Kirim</th>
                                 <th style="text-align: center;">Aksi</th>
                             </tr>
                         </thead>
                         <tbody id="riderManifestTableBody">
                             <tr>
-                                <td colspan="10" style="text-align: center; color: var(--text-muted);">Belum ada barang yang discan oleh Rider. Silakan scan resi terlebih dahulu.</td>
+                                <td colspan="11" style="text-align: center; color: var(--text-muted);">Belum ada barang yang discan oleh Rider. Silakan scan resi terlebih dahulu.</td>
                             </tr>
                         </tbody>
                     </table>
@@ -766,11 +844,34 @@
             </div>
         </div>
 
-        <!-- TAB 4: WA POD -->
-        <div id="waTab" class="tab-content">
+        <!-- TAB 5: PERFORMA RIDER (PUBLIC ACCESS) -->
+        <div id="performanceTab" class="tab-content">
             <div class="card">
-                <h2>Verifikasi WA Group POD (Proof of Delivery)</h2>
-                <p style="font-size: 0.9rem; color: var(--text-muted);">Verifikasi bukti pengiriman kurir lapangan.</p>
+                <h2>🏆 Capaian & Performa Pengiriman Rider</h2>
+                <p style="font-size: 0.88rem; color: var(--text-muted); margin-bottom: 15px;">
+                    Statistik real-time paket berhasil terkirim dan capaian seluruh kurir lapangan.
+                </p>
+
+                <div class="table-responsive">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>No</th>
+                                <th>Nama Rider</th>
+                                <th>Motor</th>
+                                <th>Total Dibawa</th>
+                                <th>Berhasil Terkirim (POD)</th>
+                                <th>Total Nominal COD Terkirim</th>
+                                <th style="min-width: 180px;">Persentase Keberhasilan</th>
+                            </tr>
+                        </thead>
+                        <tbody id="performanceTableBody">
+                            <tr>
+                                <td colspan="7" style="text-align: center; color: var(--text-muted);">Memuat data performa rider...</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
             </div>
         </div>
 
@@ -822,10 +923,12 @@
         }
 
         let inputPaketList = [];
+        let riderList = [];
         let riderManifestList = [];
         let donutChart = null;
         let barChart = null;
         let editingResi = null;
+        let editingRiderId = null;
         let pendingTabTarget = null;
         let pendingBtnElement = null;
         let html5QrcodeScanner = null;
@@ -846,11 +949,22 @@
             initCharts();
 
             if (db) {
+                // LISTEN DATA PAKET
                 db.ref('paket_input').on('value', function(snapshot) {
                     const data = snapshot.val();
                     inputPaketList = data ? Object.values(data) : [];
                     renderInputPaketTable();
                     updateDashboardMetrics();
+                    renderPerformanceTable();
+                });
+
+                // LISTEN DATA RIDER
+                db.ref('riders').on('value', function(snapshot) {
+                    const data = snapshot.val();
+                    riderList = data ? Object.values(data) : [];
+                    renderRiderTable();
+                    updateRiderSelectOptions();
+                    renderPerformanceTable();
                 });
             }
         });
@@ -872,7 +986,7 @@
             let waNum = formatPhoneToWa(phoneStr);
             if (!waNum) return null;
             
-            let message = "Halo " + (name || 'Kak') + ", kami dari Kurir SPX Express. Paket Anda dengan No Resi *" + resi + "* sedang dalam perjalanan pengiriman hari ini. Mohon pastikan penerima berada di tempat. Terima kasih!";
+            let message = "Halo " + (name || 'Kak') + ", kami dari Kurir SPX Express Paket Gaskeun. Paket Anda dengan No Resi *" + resi + "* sedang dalam perjalanan pengiriman hari ini. Mohon pastikan penerima berada di tempat. Terima kasih!";
             return "https://wa.me/" + waNum + "?text=" + encodeURIComponent(message);
         }
 
@@ -894,6 +1008,149 @@
             } catch (e) {
                 console.log("Audio error", e);
             }
+        }
+
+        // MANAGEMENT DATA RIDER (KHUSUS ADMIN)
+        function saveRiderData() {
+            let name = document.getElementById('riderInputName').value.trim();
+            let motor = document.getElementById('riderInputMotor').value.trim();
+            let age = document.getElementById('riderInputAge').value.trim();
+            let wa = document.getElementById('riderInputWa').value.trim();
+
+            if (!name || !motor || !age || !wa) {
+                alert("⚠️ Semua data rider WAJIB diisi lengkap!");
+                return;
+            }
+
+            let id = editingRiderId ? editingRiderId : 'RIDER_' + Date.now();
+
+            let riderData = {
+                id: id,
+                name: name,
+                motor: motor,
+                age: age,
+                wa: wa
+            };
+
+            if (db) db.ref('riders/' + id).set(riderData);
+
+            alert(editingRiderId ? "✅ Data rider berhasil diperbarui!" : "✅ Rider baru berhasil ditambahkan!");
+
+            editingRiderId = null;
+            document.getElementById('btnSubmitRider').innerText = "Simpan Data Rider";
+            document.getElementById('riderInputName').value = '';
+            document.getElementById('riderInputMotor').value = '';
+            document.getElementById('riderInputAge').value = '';
+            document.getElementById('riderInputWa').value = '';
+        }
+
+        function editRider(id) {
+            let r = riderList.find(function(item) { return item.id === id; });
+            if (!r) return;
+
+            editingRiderId = id;
+            document.getElementById('riderInputName').value = r.name;
+            document.getElementById('riderInputMotor').value = r.motor;
+            document.getElementById('riderInputAge').value = r.age;
+            document.getElementById('riderInputWa').value = r.wa;
+
+            document.getElementById('btnSubmitRider').innerText = "💾 Simpan Perubahan Rider";
+            window.scrollTo({ top: 100, behavior: 'smooth' });
+        }
+
+        function deleteRider(id) {
+            if (confirm("Apakah Anda yakin ingin menghapus data rider ini?")) {
+                if (db) db.ref('riders/' + id).remove();
+            }
+        }
+
+        function renderRiderTable() {
+            let tbody = document.getElementById('riderTableBody');
+            if (!tbody) return;
+            tbody.innerHTML = '';
+
+            if (riderList.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="6" style="text-align: center; color: var(--text-muted);">Belum ada data rider. Silakan tambahkan rider di atas.</td></tr>';
+                return;
+            }
+
+            riderList.forEach(function(item, index) {
+                let waFormatted = formatPhoneToWa(item.wa);
+                let waBtn = waFormatted ? '<a href="https://wa.me/' + waFormatted + '" target="_blank" class="btn-action btn-wa">💬 WA</a>' : '';
+
+                tbody.innerHTML += '<tr>' +
+                    '<td>' + (index + 1) + '</td>' +
+                    '<td><strong>' + item.name + '</strong></td>' +
+                    '<td>' + item.motor + '</td>' +
+                    '<td>' + item.age + ' Thn</td>' +
+                    '<td>' + item.wa + ' ' + waBtn + '</td>' +
+                    '<td style="text-align: center; white-space: nowrap;">' +
+                        '<button class="btn-action btn-edit" onclick="editRider('' + item.id + '')">✏️ Edit</button> ' +
+                        '<button class="btn-action btn-delete" onclick="deleteRider('' + item.id + '')">🗑️ Hapus</button>' +
+                    '</td>' +
+                    '</tr>';
+            });
+        }
+
+        function updateRiderSelectOptions() {
+            let select = document.getElementById('riderSelect');
+            if (!select) return;
+            let currentVal = select.value;
+
+            select.innerHTML = '<option value="">-- Pilih Rider --</option>';
+            riderList.forEach(function(r) {
+                select.innerHTML += '<option value="' + r.name + '">' + r.name + ' (' + r.motor + ')</option>';
+            });
+
+            if (currentVal) select.value = currentVal;
+        }
+
+        // RENDER TERTULIS PERFORMA RIDER
+        function renderPerformanceTable() {
+            let tbody = document.getElementById('performanceTableBody');
+            if (!tbody) return;
+            tbody.innerHTML = '';
+
+            if (riderList.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="7" style="text-align: center; color: var(--text-muted);">Belum ada rider terdaftar. Tambahkan rider di menu "Daftar Rider".</td></tr>';
+                return;
+            }
+
+            riderList.forEach(function(r, index) {
+                let riderName = r.name;
+                
+                // Cari statistik paket rider dari paket_input
+                let totalAssigned = 0;
+                let deliveredCount = 0;
+                let codDeliveredAmount = 0;
+
+                inputPaketList.forEach(function(pkg) {
+                    if (pkg.assignedRider === riderName) {
+                        totalAssigned++;
+                        if (pkg.status === 'DELIVERED') {
+                            deliveredCount++;
+                            codDeliveredAmount += (pkg.nominalCod || 0);
+                        }
+                    }
+                });
+
+                let percentage = totalAssigned > 0 ? Math.round((deliveredCount / totalAssigned) * 100) : 0;
+
+                tbody.innerHTML += '<tr>' +
+                    '<td>' + (index + 1) + '</td>' +
+                    '<td><strong>' + r.name + '</strong></td>' +
+                    '<td>' + r.motor + '</td>' +
+                    '<td><strong>' + totalAssigned + ' Paket</strong></td>' +
+                    '<td><span class="badge badge-reg">' + deliveredCount + ' Terkirim</span></td>' +
+                    '<td>Rp ' + codDeliveredAmount.toLocaleString() + '</td>' +
+                    '<td>' +
+                        '<div class="progress-bar-bg">' +
+                            '<div class="progress-bar-fill" style="width: ' + percentage + '%;"></div>' +
+                            '<div class="progress-bar-text">' + percentage + '% (' + deliveredCount + '/' + totalAssigned + ')</div>' +
+                        '</div>' +
+                    '</td>' +
+                    '</tr>';
+            });
         }
 
         function toggleCameraScanner() {
@@ -939,6 +1196,12 @@
         }
 
         function addResiToRiderManifest(rawResi) {
+            let selectedRider = document.getElementById('riderSelect').value;
+            if (!selectedRider) {
+                alert("⚠️ Silakan PILIH RIDER terlebih dahulu sebelum menambahkan / scan resi!");
+                return;
+            }
+
             if (!rawResi) return;
             let resiUpper = rawResi.trim().toUpperCase();
 
@@ -954,9 +1217,14 @@
             let pkgData = inputPaketList.find(function(p) { return p.resi === resiUpper; });
 
             if (pkgData) {
+                pkgData.assignedRider = selectedRider;
+                if (!pkgData.status) pkgData.status = 'PENDING';
                 riderManifestList.push(pkgData);
+
+                // Update rider penanggung jawab di Firebase
+                if (db) db.ref('paket_input/' + resiUpper + '/assignedRider').set(selectedRider);
             } else {
-                riderManifestList.push({
+                let newTemp = {
                     resi: resiUpper,
                     receiver: "-",
                     phone: "-",
@@ -964,8 +1232,11 @@
                     patokan: "-",
                     desa: "Umum",
                     tipe: "REGULER",
-                    nominalCod: 0
-                });
+                    nominalCod: 0,
+                    assignedRider: selectedRider,
+                    status: 'PENDING'
+                };
+                riderManifestList.push(newTemp);
             }
 
             playBeepSound();
@@ -976,6 +1247,16 @@
         function handleRiderManualEnter(e) {
             if (e.key === 'Enter') {
                 addResiToRiderManifest(e.target.value);
+            }
+        }
+
+        function updatePaketStatus(resi, newStatus) {
+            let item = riderManifestList.find(function(i) { return i.resi === resi; });
+            if (item) {
+                item.status = newStatus;
+                if (db) db.ref('paket_input/' + resi + '/status').set(newStatus);
+                renderRiderManifestTable();
+                renderPerformanceTable();
             }
         }
 
@@ -998,7 +1279,7 @@
             let totalCod = 0;
 
             if (riderManifestList.length === 0) {
-                tbody.innerHTML = '<tr><td colspan="10" style="text-align: center; color: var(--text-muted);">Belum ada barang yang discan oleh Rider. Silakan scan resi terlebih dahulu.</td></tr>';
+                tbody.innerHTML = '<tr><td colspan="11" style="text-align: center; color: var(--text-muted);">Belum ada barang yang discan oleh Rider. Silakan scan resi terlebih dahulu.</td></tr>';
                 document.getElementById('riderTotalItems').innerText = '0 Paket';
                 document.getElementById('riderTotalCod').innerText = 'Rp 0';
                 return;
@@ -1013,6 +1294,11 @@
                 let waBtn = waLink ? '<a href="' + waLink + '" target="_blank" class="btn-action btn-wa" title="Chat WhatsApp">💬 WA</a>' : '';
                 let contactDisplay = (item.phone && item.phone !== '-') ? '<div><strong>' + item.phone + '</strong></div><div style="margin-top: 4px;">' + waBtn + phoneBtn + '</div>' : '-';
 
+                let isDelivered = item.status === 'DELIVERED';
+                let statusBtnHtml = isDelivered ? 
+                    '<span class="badge badge-reg">✅ TERKIRIM</span>' : 
+                    '<button class="btn-action btn-wa" onclick="updatePaketStatus('' + item.resi + '', 'DELIVERED')">✔️ Tandai Terkirim</button>';
+
                 tbody.innerHTML += '<tr>' +
                     '<td>' + (index + 1) + '</td>' +
                     '<td><strong>' + item.resi + '</strong></td>' +
@@ -1023,7 +1309,8 @@
                     '<td>Desa ' + item.desa + '</td>' +
                     '<td><span class="badge ' + badgeClass + '">' + item.tipe + '</span></td>' +
                     '<td>Rp ' + (item.nominalCod || 0).toLocaleString() + '</td>' +
-                    '<td style="text-align: center;"><button class="btn-action btn-delete" onclick="removeRiderItem(\'' + item.resi + '\')">❌ Batal</button></td>' +
+                    '<td style="text-align: center;">' + statusBtnHtml + '</td>' +
+                    '<td style="text-align: center;"><button class="btn-action btn-delete" onclick="removeRiderItem('' + item.resi + '')">❌ Batal</button></td>' +
                     '</tr>';
             });
 
@@ -1046,7 +1333,8 @@
         }
 
         function switchTab(tabId, btnElement) {
-            if ((tabId === 'dashTab' || tabId === 'inputTab') && !isAdminLoggedIn()) {
+            // RESTRIKSI AKSES ADMIN UNTUK TAB DASHBOARD, DAFTAR RIDER, DAN INPUT PAKET
+            if ((tabId === 'dashTab' || tabId === 'riderTab' || tabId === 'inputTab') && !isAdminLoggedIn()) {
                 pendingTabTarget = tabId;
                 pendingBtnElement = btnElement;
                 let modal = document.getElementById('loginModal');
@@ -1102,7 +1390,7 @@
                 sessionStorage.removeItem('spx_admin_logged');
                 checkAdminAuthState();
                 alert("Anda telah keluar dari mode Admin.");
-                let publicBtn = document.querySelectorAll('.step-btn')[2];
+                let publicBtn = document.querySelectorAll('.step-btn')[3];
                 executeTabSwitch('manifestTab', publicBtn);
             }
         }
@@ -1264,7 +1552,10 @@
                     addressText = (recvIndex !== -1) ? blockText.substring(0, recvIndex) : blockText;
                 }
                 
-                let detailAddr = addressText.replace(/SPXID[A-Z0-9]+/gi, '').replace(/\r?\n|\r/g, ', ').trim();
+                let detailAddr = addressText.replace(/SPXID[A-Z0-9]+/gi, '').replace(/
+?
+|
+/g, ', ').trim();
                 detailAddr = detailAddr.replace(/^[\s,]+|[\s,]+$/g, '');
 
                 let receiverName = "-";
@@ -1281,7 +1572,10 @@
                     phoneNumber = phoneMatch[0];
                 }
 
-                let lines = receiverBlock.split(/\r?\n|\r/).map(function(l) { return l.trim(); }).filter(function(l) { return l.length > 0; });
+                let lines = receiverBlock.split(/
+?
+|
+/).map(function(l) { return l.trim(); }).filter(function(l) { return l.length > 0; });
                 for (let j = 0; j < lines.length; j++) {
                     let line = lines[j];
                     if (/Receiver/i.test(line) || /Information/i.test(line) || /Tel:/i.test(line) || /Tel/i.test(line) || /\+62/i.test(line) || /08\d+/i.test(line) || /Assigned/i.test(line) || /Hub/i.test(line)) {
@@ -1485,8 +1779,8 @@
                     '<td>Rp ' + (item.nominalCod || 0).toLocaleString() + '</td>' +
                     '<td style="white-space: nowrap;">' + item.date + '</td>' +
                     '<td style="text-align: center; white-space: nowrap;">' +
-                        '<button class="btn-action btn-edit" onclick="editPaket(\'' + item.resi + '\')">✏️ Edit</button> ' +
-                        '<button class="btn-action btn-delete" onclick="deletePaket(\'' + item.resi + '\')">🗑️ Hapus</button>' +
+                        '<button class="btn-action btn-edit" onclick="editPaket('' + item.resi + '')">✏️ Edit</button> ' +
+                        '<button class="btn-action btn-delete" onclick="deletePaket('' + item.resi + '')">🗑️ Hapus</button>' +
                     '</td>' +
                     '</tr>';
             });
