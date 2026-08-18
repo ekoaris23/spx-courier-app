@@ -53,6 +53,8 @@
             justify-content: space-between;
             align-items: center;
             box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+            flex-wrap: wrap;
+            gap: 10px;
         }
 
         header h1 {
@@ -66,6 +68,12 @@
         header p {
             font-size: 0.85rem;
             opacity: 0.95;
+        }
+
+        .header-controls {
+            display: flex;
+            align-items: center;
+            gap: 12px;
         }
 
         .status-badge {
@@ -87,6 +95,19 @@
             border-radius: 50%;
             display: inline-block;
         }
+
+        .btn-logout {
+            background-color: #222;
+            color: white;
+            padding: 6px 12px;
+            border: none;
+            border-radius: 20px;
+            font-size: 0.8rem;
+            font-weight: bold;
+            cursor: pointer;
+            display: none;
+        }
+        .btn-logout:hover { background-color: #000; }
 
         .container {
             max-width: 1250px;
@@ -128,6 +149,11 @@
             border-bottom: 3px solid var(--primary);
             background: #fff5f2;
             border-radius: 4px 4px 0 0;
+        }
+
+        .step-btn.admin-restricted::after {
+            content: " 🔒";
+            font-size: 0.8rem;
         }
 
         /* Metrics Grid Dashboard */
@@ -393,6 +419,46 @@
 
         .tab-content { display: none; }
         .tab-content.active { display: block; }
+
+        /* MODAL POPUP LOGIN ADMIN */
+        .modal-overlay {
+            display: none;
+            position: fixed;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background: rgba(0, 0, 0, 0.6);
+            z-index: 9999;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .modal-box {
+            background: white;
+            padding: 25px;
+            border-radius: 12px;
+            width: 90%;
+            max-width: 380px;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.2);
+            text-align: center;
+        }
+
+        .modal-box h3 {
+            color: var(--primary);
+            margin-bottom: 10px;
+        }
+
+        .modal-box p {
+            font-size: 0.85rem;
+            color: var(--text-muted);
+            margin-bottom: 15px;
+        }
+
+        .login-error {
+            color: var(--danger);
+            font-size: 0.85rem;
+            margin-bottom: 10px;
+            display: none;
+            font-weight: bold;
+        }
     </style>
 </head>
 <body>
@@ -402,8 +468,11 @@
             <h1>🛵 SPX PAKET GASKEUN</h1>
             <p>aplikasi operasional admin & rider Basecamp PAKET GASKEUN PURI</p>
         </div>
-        <div class="status-badge">
-            <span class="status-dot"></span> Terhubung Realtime
+        <div class="header-controls">
+            <div class="status-badge">
+                <span class="status-dot"></span> <span id="userStatusText">Akses Kurir (Public)</span>
+            </div>
+            <button id="btnLogout" class="btn-logout" onclick="logoutAdmin()">Logout Admin</button>
         </div>
     </header>
 
@@ -411,15 +480,15 @@
         
         <!-- Navigation Bar -->
         <div class="step-nav">
-            <button class="step-btn active" onclick="switchTab('dashTab', this)">📈 Dashboard & Grafik</button>
-            <button class="step-btn" onclick="switchTab('inputTab', this)">📦 Input Paket SPX</button>
-            <button class="step-btn" onclick="switchTab('basecampTab', this)">🚚 Serah Terima & Sortir</button>
+            <button class="step-btn admin-restricted" onclick="switchTab('dashTab', this)">📈 Dashboard & Grafik</button>
+            <button class="step-btn admin-restricted" onclick="switchTab('inputTab', this)">📦 Input Paket SPX</button>
+            <button class="step-btn active" onclick="switchTab('basecampTab', this)">🚚 Serah Terima & Sortir</button>
             <button class="step-btn" onclick="switchTab('manifestTab', this)">📝 Manifest Rider</button>
             <button class="step-btn" onclick="switchTab('waTab', this)">📲 Verifikasi WA POD</button>
         </div>
 
-        <!-- TAB 1: DASHBOARD & GRAFIK -->
-        <div id="dashTab" class="tab-content active">
+        <!-- TAB 1: DASHBOARD & GRAFIK (ADMIN ONLY) -->
+        <div id="dashTab" class="tab-content">
             
             <div class="metrics-grid">
                 <div class="metric-card">
@@ -473,7 +542,7 @@
 
         </div>
 
-        <!-- TAB 2: INPUT PAKET -->
+        <!-- TAB 2: INPUT PAKET (ADMIN ONLY) -->
         <div id="inputTab" class="tab-content">
             <div class="card">
                 <h2>Form Input Paket SPX</h2>
@@ -604,7 +673,7 @@
         </div>
 
         <!-- TAB 3: BASECAMP SORTIR -->
-        <div id="basecampTab" class="tab-content">
+        <div id="basecampTab" class="tab-content active">
             <div class="card">
                 <h2>Serah Terima & Marking Admin</h2>
                 <div class="form-group">
@@ -644,6 +713,31 @@
 
     </div>
 
+    <!-- MODAL DIALOG LOGIN ADMIN -->
+    <div id="loginModal" class="modal-overlay">
+        <div class="modal-box">
+            <h3>🔒 Otentikasi Khusus Admin</h3>
+            <p>Masukkan Username & Password untuk mengakses Dashboard atau Form Input Paket.</p>
+            
+            <div id="loginErrorMsg" class="login-error">Username atau Password Salah!</div>
+
+            <div class="form-group" style="text-align: left;">
+                <label>Username</label>
+                <input type="text" id="loginUser" class="form-control" placeholder="Masukkan username..." value="admin">
+            </div>
+
+            <div class="form-group" style="text-align: left;">
+                <label>Password</label>
+                <input type="password" id="loginPass" class="form-control" placeholder="Masukkan password...">
+            </div>
+
+            <div style="display: flex; gap: 10px; margin-top: 20px;">
+                <button class="btn btn-secondary" style="flex: 1; padding: 10px;" onclick="closeLoginModal()">Batal</button>
+                <button class="btn" style="flex: 1; padding: 10px;" onclick="submitAdminLogin()">Login Admin</button>
+            </div>
+        </div>
+    </div>
+
     <script>
         // FIREBASE CONFIGURATION
         const firebaseConfig = {
@@ -667,6 +761,8 @@
         let donutChart = null;
         let barChart = null;
         let editingResi = null;
+        let pendingTabTarget = null;
+        let pendingBtnElement = null;
 
         const desaJatinangor = [
             "Cikeruh", "Cilayung", "Cileles", "Cipacing", "Cisempur", 
@@ -678,6 +774,7 @@
             let today = new Date().toISOString().split('T')[0];
             document.getElementById('inputDate').value = today;
 
+            checkAdminAuthState();
             initCharts();
 
             if (db) {
@@ -690,7 +787,36 @@
             }
         });
 
+        // AUTENTIKASI ADMIN & TAB SWITCHING PROTEKSI
+        function isAdminLoggedIn() {
+            return sessionStorage.getItem('spx_admin_logged') === 'true';
+        }
+
+        function checkAdminAuthState() {
+            if (isAdminLoggedIn()) {
+                document.getElementById('userStatusText').innerText = 'Akses Admin Terverifikasi';
+                document.getElementById('btnLogout').style.display = 'inline-block';
+            } else {
+                document.getElementById('userStatusText').innerText = 'Akses Kurir (Public)';
+                document.getElementById('btnLogout').style.display = 'none';
+            }
+        }
+
         function switchTab(tabId, btnElement) {
+            // Proteksi Khusus Tab Admin (dashTab & inputTab)
+            if ((tabId === 'dashTab' || tabId === 'inputTab') && !isAdminLoggedIn()) {
+                pendingTabTarget = tabId;
+                pendingBtnElement = btnElement;
+                document.getElementById('loginModal').style.display = 'flex';
+                document.getElementById('loginErrorMsg').style.display = 'none';
+                document.getElementById('loginPass').value = '';
+                return;
+            }
+
+            executeTabSwitch(tabId, btnElement);
+        }
+
+        function executeTabSwitch(tabId, btnElement) {
             let tabs = document.querySelectorAll('.tab-content');
             tabs.forEach(tab => tab.classList.remove('active'));
 
@@ -698,7 +824,41 @@
             btns.forEach(btn => btn.classList.remove('active'));
 
             document.getElementById(tabId).classList.add('active');
-            btnElement.classList.add('active');
+            if (btnElement) btnElement.classList.add('active');
+        }
+
+        function submitAdminLogin() {
+            let user = document.getElementById('loginUser').value.trim();
+            let pass = document.getElementById('loginPass').value.trim();
+
+            if (user === 'admin' && pass === 'admin123') {
+                sessionStorage.setItem('spx_admin_logged', 'true');
+                checkAdminAuthState();
+                closeLoginModal();
+                
+                if (pendingTabTarget) {
+                    executeTabSwitch(pendingTabTarget, pendingBtnElement);
+                    pendingTabTarget = null;
+                    pendingBtnElement = null;
+                }
+            } else {
+                document.getElementById('loginErrorMsg').style.display = 'block';
+            }
+        }
+
+        function closeLoginModal() {
+            document.getElementById('loginModal').style.display = 'none';
+        }
+
+        function logoutAdmin() {
+            if (confirm("Apakah Anda ingin keluar dari mode Admin?")) {
+                sessionStorage.removeItem('spx_admin_logged');
+                checkAdminAuthState();
+                alert("Anda telah keluar dari mode Admin.");
+                // Pindah kembali ke tab publik (Basecamp)
+                let publicBtn = document.querySelectorAll('.step-btn')[2];
+                executeTabSwitch('basecampTab', publicBtn);
+            }
         }
 
         function toggleManualForm() {
