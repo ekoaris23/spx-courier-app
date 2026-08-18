@@ -1230,29 +1230,7 @@
             return "-";
         }
 
-        function extractReceiverName(blockText) {
-            let lines = blockText.split('\n').map(l => l.trim()).filter(l => l.length > 0);
-            
-            for (let line of lines) {
-                if (/SPXID|COD|IDR|HUB|JATINANGOR|REGULER|CEK DULU|Standard|Penerima Paket|Nama Penerima/i.test(line)) continue;
-                if (/dsa|ds|desa|kel|kelurahan|rt|rw|dsn|dusun|jl|jalan|kab|kec/i.test(line)) continue;
-                if (/^\d+$/.test(line) || line.length < 3) continue;
-
-                if (/^[a-zA-Z\s\.'\(\)]+$/.test(line)) {
-                    return line;
-                }
-            }
-            return "-";
-        }
-
-        function extractPhoneNumber(blockText) {
-            let phoneMatch = blockText.match(/(?:08|628|\+628)\d{8,12}/);
-            if (phoneMatch) {
-                return phoneMatch[0];
-            }
-            return "-";
-        }
-
+        // PENYESUAIAN OCR KHUSUS TAMPILAN ORDER INFO SPX
         function parseMultiSpxOcrText(rawText) {
             let alertBox = document.getElementById('uploadAlert');
             let dateVal = document.getElementById('inputDate').value;
@@ -1265,7 +1243,6 @@
             }
 
             let newAdded = 0;
-            let duplicates = [];
 
             for (let i = 0; i < matches.length; i++) {
                 let resi = matches[i][0].toUpperCase();
@@ -1273,28 +1250,62 @@
                 let endIndex = (i < matches.length - 1) ? matches[i+1].index : rawText.length;
                 let blockText = rawText.substring(startIndex, endIndex);
 
-                if (inputPaketList.some(pkg => pkg.resi === resi)) {
-                    duplicates.push(resi);
-                    continue;
+                // 1. Dapatkan Alamat Lengkap dari Kotak Utama (Abaikan Blok "Alamat Rekomendasi")
+                let addressText = "";
+                let recIndex = blockText.search(/Alamat\s*Rekomendasi/i);
+                if (recIndex !== -1) {
+                    addressText = blockText.substring(0, recIndex);
+                } else {
+                    let recvIndex = blockText.search(/Receiver\s*Information/i);
+                    addressText = (recvIndex !== -1) ? blockText.substring(0, recvIndex) : blockText;
+                }
+                
+                // Bersihkan No Resi dari Alamat
+                let detailAddr = addressText.replace(/SPXID[A-Z0-9]+/gi, '').replace(/
++/g, ', ').trim();
+                detailAddr = detailAddr.replace(/^[\s,]+|[\s,]+$/g, '');
+
+                // 2. Dapatkan Receiver Information (Nama & No HP)
+                let receiverName = "-";
+                let phoneNumber = "-";
+
+                let receiverBlock = blockText;
+                let rMatch = blockText.match(/Receiver\s*Information([\s\S]*?)(?:Assigned\s*Hub|On-Hold|Delivered|$)/i);
+                if (rMatch) {
+                    receiverBlock = rMatch[1];
                 }
 
-                let lines = blockText.split('\n').map(l => l.trim()).filter(l => l.length > 0);
-                let detailAddr = lines.find(l => /dsa|ds|desa|kel|kelurahan|rt|rw|dsn|dusun|jl|jalan/i.test(l)) || "-";
-                let patokan = extractPatokan(detailAddr);
-                let receiverName = extractReceiverName(blockText);
-                let phoneNumber = extractPhoneNumber(blockText);
+                // Ekstrak No HP (format Tel: +62... / 08...)
+                let phoneMatch = receiverBlock.match(/(?:\+?62|08)\d{8,12}/);
+                if (phoneMatch) {
+                    phoneNumber = phoneMatch[0];
+                }
 
+                // Ekstrak Nama Penerima (Tepat sebelum Tel / No HP)
+                let lines = receiverBlock.split('
+').map(l => l.trim()).filter(l => l.length > 0);
+                for (let line of lines) {
+                    if (/Receiver\s*Information|Tel:|Tel|\+62|08|Assigned|Hub/i.test(line)) continue;
+                    if (line.length >= 2) {
+                        receiverName = line;
+                        break;
+                    }
+                }
+
+                // 3. Tentukan Desa Jatinangor & Patokan
+                let patokan = extractPatokan(detailAddr);
                 let desaFound = "Cileles";
                 for (let d of desaJatinangor) {
                     if (new RegExp(d, 'i').test(blockText)) { desaFound = d; break; }
                 }
 
+                // 4. Tipe & Nominal COD
                 let tipe = "REGULER";
                 let nominalCod = 0;
                 if (/COD\s*Cek\s*Dulu/i.test(blockText)) tipe = "COD CEK DULU";
-                else if (/\bCOD\b/i.test(blockText)) tipe = "COD";
+                else if (/COD/i.test(blockText)) tipe = "COD";
 
-                let codMatch = blockText.match(/COD:\s*([\d\.\,]+)\s*IDR/i) || blockText.match(/(\d[\d\.\,]*)\s*IDR/i);
+                let codMatch = blockText.match(/COD:\s*([\d\.\,]+)/i) || blockText.match(/(\d[\d\.\,]*)\s*IDR/i);
                 if (codMatch) nominalCod = parseInt(codMatch[1].replace(/[^\d]/g, '')) || 0;
 
                 let newPaket = {
@@ -1308,7 +1319,7 @@
 
             alertBox.style.display = 'block';
             alertBox.className = newAdded > 0 ? 'upload-alert success' : 'upload-alert danger';
-            alertBox.innerText = `✅ Berhasil tambah ${newAdded} paket baru!`;
+            alertBox.innerText = `✅ Berhasil memproses & memperbarui ${newAdded} paket dari Screenshot!`;
         }
 
         function processInputPaketManual() {
