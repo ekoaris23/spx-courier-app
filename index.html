@@ -846,7 +846,7 @@
             initCharts();
 
             if (db) {
-                db.ref('paket_input').on('value', (snapshot) => {
+                db.ref('paket_input').on('value', function(snapshot) {
                     const data = snapshot.val();
                     inputPaketList = data ? Object.values(data) : [];
                     renderInputPaketTable();
@@ -855,10 +855,9 @@
             }
         });
 
-        // FORMAT NOMOR TELEPON KE KONSTRUKSI WHATSAPP (628xxx)
         function formatPhoneToWa(phoneStr) {
             if (!phoneStr) return null;
-            let cleaned = phoneStr.replace(/[^\d]/g, '');
+            let cleaned = phoneStr.replace(/[^0-9]/g, '');
             if (!cleaned) return null;
 
             if (cleaned.startsWith('0')) {
@@ -869,7 +868,6 @@
             return cleaned;
         }
 
-        // BUAT LINK WHATSAPP DENGAN PESAN OTOMATIS
         function getWaLink(phoneStr, resi, name) {
             let waNum = formatPhoneToWa(phoneStr);
             if (!waNum) return null;
@@ -878,7 +876,6 @@
             return "https://wa.me/" + waNum + "?text=" + encodeURIComponent(message);
         }
 
-        // EFEK SUARA "BIP" (WEB AUDIO API)
         function playBeepSound() {
             try {
                 const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
@@ -899,14 +896,13 @@
             }
         }
 
-        // TOGGLE KAMERA SCANNER RIDER
         function toggleCameraScanner() {
             let readerDiv = document.getElementById('reader');
             let btnCam = document.getElementById('btnToggleCam');
 
             if (isCameraRunning) {
                 if (html5QrcodeScanner) {
-                    html5QrcodeScanner.stop().then(() => {
+                    html5QrcodeScanner.stop().then(function() {
                         readerDiv.style.display = 'none';
                         btnCam.innerText = '📷 Buka Kamera Scan Barcode Resi';
                         btnCam.style.backgroundColor = 'var(--secondary)';
@@ -925,7 +921,7 @@
                     { facingMode: "environment" },
                     config,
                     onScanSuccess
-                ).catch(err => {
+                ).catch(function(err) {
                     alert("⚠️ Kamera tidak dapat diakses! Pastikan izin kamera telah diberikan.");
                     readerDiv.style.display = 'none';
                     btnCam.innerText = '📷 Buka Kamera Scan Barcode Resi';
@@ -942,7 +938,6 @@
             addResiToRiderManifest(decodedText);
         }
 
-        // TAMBAH RESI KE LIST RIDER
         function addResiToRiderManifest(rawResi) {
             if (!rawResi) return;
             let resiUpper = rawResi.trim().toUpperCase();
@@ -950,13 +945,13 @@
             let matchResi = resiUpper.match(/SPXID[A-Z0-9]+/i);
             if (matchResi) resiUpper = matchResi[0].toUpperCase();
 
-            if (riderManifestList.some(item => item.resi === resiUpper)) {
+            if (riderManifestList.some(function(item) { return item.resi === resiUpper; })) {
                 alert("⚠️ Resi " + resiUpper + " sudah ada di list bawaan Rider!");
                 document.getElementById('riderManualScanInput').value = '';
                 return;
             }
 
-            let pkgData = inputPaketList.find(p => p.resi === resiUpper);
+            let pkgData = inputPaketList.find(function(p) { return p.resi === resiUpper; });
 
             if (pkgData) {
                 riderManifestList.push(pkgData);
@@ -985,7 +980,7 @@
         }
 
         function removeRiderItem(resi) {
-            riderManifestList = riderManifestList.filter(i => i.resi !== resi);
+            riderManifestList = riderManifestList.filter(function(i) { return i.resi !== resi; });
             renderRiderManifestTable();
         }
 
@@ -1009,7 +1004,7 @@
                 return;
             }
 
-            riderManifestList.forEach((item, index) => {
+            riderManifestList.forEach(function(item, index) {
                 totalCod += (item.nominalCod || 0);
                 let badgeClass = item.tipe === 'REGULER' ? 'badge-reg' : (item.tipe === 'COD' ? 'badge-cod' : 'badge-cek');
 
@@ -1018,29 +1013,24 @@
                 let waBtn = waLink ? '<a href="' + waLink + '" target="_blank" class="btn-action btn-wa" title="Chat WhatsApp">💬 WA</a>' : '';
                 let contactDisplay = (item.phone && item.phone !== '-') ? '<div><strong>' + item.phone + '</strong></div><div style="margin-top: 4px;">' + waBtn + phoneBtn + '</div>' : '-';
 
-                tbody.innerHTML += `
-                    <tr>
-                        <td>${index + 1}</td>
-                        <td><strong>${item.resi}</strong></td>
-                        <td>${item.receiver || '-'}</td>
-                        <td style="white-space: nowrap;">${contactDisplay}</td>
-                        <td>${item.detailAddr}</td>
-                        <td><span class="badge-patokan">${item.patokan}</span></td>
-                        <td>Desa ${item.desa}</td>
-                        <td><span class="badge ${badgeClass}">${item.tipe}</span></td>
-                        <td>Rp ${(item.nominalCod || 0).toLocaleString()}</td>
-                        <td style="text-align: center;">
-                            <button class="btn-action btn-delete" onclick="removeRiderItem('${item.resi}')">❌ Batal</button>
-                        </td>
-                    </tr>
-                `;
+                tbody.innerHTML += '<tr>' +
+                    '<td>' + (index + 1) + '</td>' +
+                    '<td><strong>' + item.resi + '</strong></td>' +
+                    '<td>' + (item.receiver || '-') + '</td>' +
+                    '<td style="white-space: nowrap;">' + contactDisplay + '</td>' +
+                    '<td>' + item.detailAddr + '</td>' +
+                    '<td><span class="badge-patokan">' + item.patokan + '</span></td>' +
+                    '<td>Desa ' + item.desa + '</td>' +
+                    '<td><span class="badge ' + badgeClass + '">' + item.tipe + '</span></td>' +
+                    '<td>Rp ' + (item.nominalCod || 0).toLocaleString() + '</td>' +
+                    '<td style="text-align: center;"><button class="btn-action btn-delete" onclick="removeRiderItem('' + item.resi + '')">❌ Batal</button></td>' +
+                    '</tr>';
             });
 
             document.getElementById('riderTotalItems').innerText = riderManifestList.length + ' Paket';
             document.getElementById('riderTotalCod').innerText = 'Rp ' + totalCod.toLocaleString();
         }
 
-        // AUTENTIKASI ADMIN & TAB SWITCHING PROTEKSI
         function isAdminLoggedIn() {
             return sessionStorage.getItem('spx_admin_logged') === 'true';
         }
@@ -1073,10 +1063,10 @@
 
         function executeTabSwitch(tabId, btnElement) {
             let tabs = document.querySelectorAll('.tab-content');
-            tabs.forEach(tab => tab.classList.remove('active'));
+            tabs.forEach(function(tab) { tab.classList.remove('active'); });
 
             let btns = document.querySelectorAll('.step-btn');
-            btns.forEach(btn => btn.classList.remove('active'));
+            btns.forEach(function(btn) { btn.classList.remove('active'); });
 
             let targetTab = document.getElementById(tabId);
             if (targetTab) targetTab.classList.add('active');
@@ -1177,9 +1167,9 @@
             let totalCodAmount = 0;
 
             let desaCountMap = {};
-            desaJatinangor.forEach(d => desaCountMap[d] = 0);
+            desaJatinangor.forEach(function(d) { desaCountMap[d] = 0; });
 
-            inputPaketList.forEach(pkg => {
+            inputPaketList.forEach(function(pkg) {
                 if (pkg.tipe === 'REGULER') regulerCount++;
                 else if (pkg.tipe === 'COD') {
                     codCount++;
@@ -1210,7 +1200,7 @@
             }
 
             if (barChart) {
-                barChart.data.datasets[0].data = desaJatinangor.map(d => desaCountMap[d]);
+                barChart.data.datasets[0].data = desaJatinangor.map(function(d) { return desaCountMap[d]; });
                 barChart.update();
             }
         }
@@ -1224,9 +1214,9 @@
             alertBox.className = 'upload-alert warning';
             alertBox.innerText = '⏳ Membaca seluruh data paket dari Screenshot... Mohon tunggu.';
 
-            Tesseract.recognize(file, 'ind+eng').then(({ data: { text } }) => {
-                parseMultiSpxOcrText(text);
-            }).catch(err => {
+            Tesseract.recognize(file, 'ind+eng').then(function(res) {
+                parseMultiSpxOcrText(res.data.text);
+            }).catch(function(err) {
                 alertBox.className = 'upload-alert danger';
                 alertBox.innerText = '❌ Gambar gagal dibaca!';
             });
@@ -1241,11 +1231,15 @@
             return "-";
         }
 
-        // PENYESUAIAN OCR KHUSUS NAMA PENERIMA (MENGABAIKAN KATA "RECEIVER INFORMATION")
         function parseMultiSpxOcrText(rawText) {
             let alertBox = document.getElementById('uploadAlert');
             let dateVal = document.getElementById('inputDate').value;
-            let matches = [...rawText.matchAll(/SPXID[A-Z0-9]+/gi)];
+            let matches = [];
+            let resiRegex = /SPXID[A-Z0-9]+/gi;
+            let match;
+            while ((match = resiRegex.exec(rawText)) !== null) {
+                matches.push(match);
+            }
 
             if (matches.length === 0) {
                 alertBox.className = 'upload-alert danger';
@@ -1288,10 +1282,10 @@
                     phoneNumber = phoneMatch[0];
                 }
 
-                // EKSTRAKSI KHUSUS NAMA PENERIMA: Mengabaikan teks "Receiver Information", "Tel:", No HP, dll.
                 let lines = receiverBlock.split(/[
-]+/).map(l => l.trim()).filter(l => l.length > 0);
-                for (let line of lines) {
+]+/).map(function(l) { return l.trim(); }).filter(function(l) { return l.length > 0; });
+                for (let j = 0; j < lines.length; j++) {
+                    let line = lines[j];
                     if (/Receiver/i.test(line) || /Information/i.test(line) || /Tel:/i.test(line) || /Tel/i.test(line) || /\+62/i.test(line) || /08\d+/i.test(line) || /Assigned/i.test(line) || /Hub/i.test(line)) {
                         continue;
                     }
@@ -1303,8 +1297,11 @@
 
                 let patokan = extractPatokan(detailAddr);
                 let desaFound = "Cileles";
-                for (let d of desaJatinangor) {
-                    if (new RegExp(d, 'i').test(blockText)) { desaFound = d; break; }
+                for (let d = 0; d < desaJatinangor.length; d++) {
+                    if (new RegExp(desaJatinangor[d], 'i').test(blockText)) { 
+                        desaFound = desaJatinangor[d]; 
+                        break; 
+                    }
                 }
 
                 let tipe = "REGULER";
@@ -1345,7 +1342,7 @@
                 return;
             }
 
-            if (!editingResi && inputPaketList.some(pkg => pkg.resi === resi)) {
+            if (!editingResi && inputPaketList.some(function(pkg) { return pkg.resi === resi; })) {
                 alert("🚫 No Resi " + resi + " sudah ada di sistem!");
                 return;
             }
@@ -1384,7 +1381,7 @@
         }
 
         function editPaket(resi) {
-            let pkg = inputPaketList.find(p => p.resi === resi);
+            let pkg = inputPaketList.find(function(p) { return p.resi === resi; });
             if (!pkg) return;
 
             editingResi = resi;
@@ -1424,9 +1421,9 @@
                 let confirm2 = confirm("🚨 KONFIRMASI TERAKHIR: Semua data akan terhapus PERMANEN dari Database. Lanjutkan?");
                 if (confirm2) {
                     if (db) {
-                        db.ref('paket_input').remove().then(() => {
+                        db.ref('paket_input').remove().then(function() {
                             alert("✅ Semua data paket berhasil dihapus bersih!");
-                        }).catch((err) => {
+                        }).catch(function(err) {
                             alert("❌ Gagal menghapus data: " + err.message);
                         });
                     }
@@ -1459,18 +1456,18 @@
             let displayList = [...inputPaketList];
 
             if (sortOption === 'newest') {
-                displayList.sort((a, b) => (b.timestamp || 0) - (a.timestamp || 0));
+                displayList.sort(function(a, b) { return (b.timestamp || 0) - (a.timestamp || 0); });
             } else if (sortOption === 'oldest') {
-                displayList.sort((a, b) => (a.timestamp || 0) - (b.timestamp || 0));
+                displayList.sort(function(a, b) { return (a.timestamp || 0) - (b.timestamp || 0); });
             } else if (sortOption === 'type') {
-                displayList.sort((a, b) => a.tipe.localeCompare(b.tipe));
+                displayList.sort(function(a, b) { return a.tipe.localeCompare(b.tipe); });
             } else if (sortOption === 'desa') {
-                displayList.sort((a, b) => a.desa.localeCompare(b.desa));
+                displayList.sort(function(a, b) { return a.desa.localeCompare(b.desa); });
             } else if (sortOption === 'codHigh') {
-                displayList.sort((a, b) => (b.nominalCod || 0) - (a.nominalCod || 0));
+                displayList.sort(function(a, b) { return (b.nominalCod || 0) - (a.nominalCod || 0); });
             }
 
-            displayList.forEach((item, index) => {
+            displayList.forEach(function(item, index) {
                 let badgeClass = item.tipe === 'REGULER' ? 'badge-reg' : (item.tipe === 'COD' ? 'badge-cod' : 'badge-cek');
                 
                 let waLink = getWaLink(item.phone, item.resi, item.receiver);
@@ -1478,24 +1475,22 @@
                 let waBtn = waLink ? '<a href="' + waLink + '" target="_blank" class="btn-action btn-wa" title="Chat WhatsApp">💬 WA</a>' : '';
                 let contactDisplay = (item.phone && item.phone !== '-') ? '<div><strong>' + item.phone + '</strong></div><div style="margin-top: 4px;">' + waBtn + phoneBtn + '</div>' : '-';
 
-                tbody.innerHTML += `
-                    <tr>
-                        <td>${index + 1}</td>
-                        <td><strong>${item.resi}</strong></td>
-                        <td>${item.receiver || '-'}</td>
-                        <td style="white-space: nowrap;">${contactDisplay}</td>
-                        <td>${item.detailAddr || '-'}</td>
-                        <td><span class="badge-patokan">${item.patokan || '-'}</span></td>
-                        <td>Desa ${item.desa}</td>
-                        <td><span class="badge ${badgeClass}">${item.tipe}</span></td>
-                        <td>Rp ${(item.nominalCod || 0).toLocaleString()}</td>
-                        <td style="white-space: nowrap;">${item.date}</td>
-                        <td style="text-align: center; white-space: nowrap;">
-                            <button class="btn-action btn-edit" onclick="editPaket('${item.resi}')">✏️ Edit</button>
-                            <button class="btn-action btn-delete" onclick="deletePaket('${item.resi}')">🗑️ Hapus</button>
-                        </td>
-                    </tr>
-                `;
+                tbody.innerHTML += '<tr>' +
+                    '<td>' + (index + 1) + '</td>' +
+                    '<td><strong>' + item.resi + '</strong></td>' +
+                    '<td>' + (item.receiver || '-') + '</td>' +
+                    '<td style="white-space: nowrap;">' + contactDisplay + '</td>' +
+                    '<td>' + (item.detailAddr || '-') + '</td>' +
+                    '<td><span class="badge-patokan">' + (item.patokan || '-') + '</span></td>' +
+                    '<td>Desa ' + item.desa + '</td>' +
+                    '<td><span class="badge ' + badgeClass + '">' + item.tipe + '</span></td>' +
+                    '<td>Rp ' + (item.nominalCod || 0).toLocaleString() + '</td>' +
+                    '<td style="white-space: nowrap;">' + item.date + '</td>' +
+                    '<td style="text-align: center; white-space: nowrap;">' +
+                        '<button class="btn-action btn-edit" onclick="editPaket('' + item.resi + '')">✏️ Edit</button> ' +
+                        '<button class="btn-action btn-delete" onclick="deletePaket('' + item.resi + '')">🗑️ Hapus</button>' +
+                    '</td>' +
+                    '</tr>';
             });
 
             filterPaketTable();
