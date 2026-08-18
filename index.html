@@ -1085,8 +1085,8 @@
                     '<td>' + item.age + ' Thn</td>' +
                     '<td>' + item.wa + ' ' + waBtn + '</td>' +
                     '<td style="text-align: center; white-space: nowrap;">' +
-                        '<button class="btn-action btn-edit" onclick="editRider('' + item.id + '')">✏️ Edit</button> ' +
-                        '<button class="btn-action btn-delete" onclick="deleteRider('' + item.id + '')">🗑️ Hapus</button>' +
+                        '<button class="btn-action btn-edit" onclick="editRider(\'' + item.id + '\')">✏️ Edit</button> ' +
+                        '<button class="btn-action btn-delete" onclick="deleteRider(\'' + item.id + '\')">🗑️ Hapus</button>' +
                     '</td>' +
                     '</tr>';
             });
@@ -1297,7 +1297,7 @@
                 let isDelivered = item.status === 'DELIVERED';
                 let statusBtnHtml = isDelivered ? 
                     '<span class="badge badge-reg">✅ TERKIRIM</span>' : 
-                    '<button class="btn-action btn-wa" onclick="updatePaketStatus('' + item.resi + '', 'DELIVERED')">✔️ Tandai Terkirim</button>';
+                    '<button class="btn-action btn-wa" onclick="updatePaketStatus(\'' + item.resi + '\', \'DELIVERED\')">✔️ Tandai Terkirim</button>';
 
                 tbody.innerHTML += '<tr>' +
                     '<td>' + (index + 1) + '</td>' +
@@ -1310,7 +1310,7 @@
                     '<td><span class="badge ' + badgeClass + '">' + item.tipe + '</span></td>' +
                     '<td>Rp ' + (item.nominalCod || 0).toLocaleString() + '</td>' +
                     '<td style="text-align: center;">' + statusBtnHtml + '</td>' +
-                    '<td style="text-align: center;"><button class="btn-action btn-delete" onclick="removeRiderItem('' + item.resi + '')">❌ Batal</button></td>' +
+                    '<td style="text-align: center;"><button class="btn-action btn-delete" onclick="removeRiderItem(\'' + item.resi + '\')">❌ Batal</button></td>' +
                     '</tr>';
             });
 
@@ -1552,10 +1552,7 @@
                     addressText = (recvIndex !== -1) ? blockText.substring(0, recvIndex) : blockText;
                 }
                 
-                let detailAddr = addressText.replace(/SPXID[A-Z0-9]+/gi, '').replace(/
-?
-|
-/g, ', ').trim();
+                let detailAddr = addressText.replace(/SPXID[A-Z0-9]+/gi, '').replace(/\r?\n|\r/g, ', ').trim();
                 detailAddr = detailAddr.replace(/^[\s,]+|[\s,]+$/g, '');
 
                 let receiverName = "-";
@@ -1572,10 +1569,7 @@
                     phoneNumber = phoneMatch[0];
                 }
 
-                let lines = receiverBlock.split(/
-?
-|
-/).map(function(l) { return l.trim(); }).filter(function(l) { return l.length > 0; });
+                let lines = receiverBlock.split(/\r?\n|\r/).map(function(l) { return l.trim(); }).filter(function(l) { return l.length > 0; });
                 for (let j = 0; j < lines.length; j++) {
                     let line = lines[j];
                     if (/Receiver/i.test(line) || /Information/i.test(line) || /Tel:/i.test(line) || /Tel/i.test(line) || /\+62/i.test(line) || /08\d+/i.test(line) || /Assigned/i.test(line) || /Hub/i.test(line)) {
@@ -1779,8 +1773,8 @@
                     '<td>Rp ' + (item.nominalCod || 0).toLocaleString() + '</td>' +
                     '<td style="white-space: nowrap;">' + item.date + '</td>' +
                     '<td style="text-align: center; white-space: nowrap;">' +
-                        '<button class="btn-action btn-edit" onclick="editPaket('' + item.resi + '')">✏️ Edit</button> ' +
-                        '<button class="btn-action btn-delete" onclick="deletePaket('' + item.resi + '')">🗑️ Hapus</button>' +
+                        '<button class="btn-action btn-edit" onclick="editPaket(\'' + item.resi + '\')">✏️ Edit</button> ' +
+                        '<button class="btn-action btn-delete" onclick="deletePaket(\'' + item.resi + '\')">🗑️ Hapus</button>' +
                     '</td>' +
                     '</tr>';
             });
