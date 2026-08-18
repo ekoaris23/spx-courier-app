@@ -4,10 +4,13 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>SPX PAKET GASKEUN 🛵🏍️</title>
+    <!-- Library Tesseract.js untuk OCR -->
     <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
     
+    <!-- Chart.js untuk Grafik Dashboard -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
+    <!-- Firebase SDK -->
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-database-compat.js"></script>
 
@@ -348,6 +351,7 @@
 
     <div class="container">
         
+        <!-- Navigation Bar -->
         <div class="step-nav">
             <button class="step-btn active" onclick="switchTab('dashTab', this)">📈 Dashboard & Grafik</button>
             <button class="step-btn" onclick="switchTab('inputTab', this)">📦 Input Paket SPX</button>
@@ -356,8 +360,10 @@
             <button class="step-btn" onclick="switchTab('waTab', this)">📲 Verifikasi WA POD</button>
         </div>
 
+        <!-- TAB 1: DASHBOARD & GRAFIK -->
         <div id="dashTab" class="tab-content active">
             
+            <!-- Cards Ringkasan Metric -->
             <div class="metrics-grid">
                 <div class="metric-card">
                     <div class="metric-info">
@@ -392,6 +398,7 @@
                 </div>
             </div>
 
+            <!-- Graphs Section -->
             <div class="charts-grid">
                 <div class="chart-card">
                     <h3>📊 Status & Proporsi Tipe Paket</h3>
@@ -401,7 +408,7 @@
                 </div>
 
                 <div class="chart-card">
-                    <h3>📈 Ringkasan Nominal COD per Desa</h3>
+                    <h3>📈 Ringkasan Jumlah Paket per Desa</h3>
                     <div>
                         <canvas id="barChart" height="220"></canvas>
                     </div>
@@ -410,6 +417,7 @@
 
         </div>
 
+        <!-- TAB 2: INPUT PAKET -->
         <div id="inputTab" class="tab-content">
             <div class="card">
                 <h2>Form Input Paket SPX</h2>
@@ -485,6 +493,7 @@
                 <button class="btn" onclick="processInputPaketManual()">Proses & Tampilkan Detail Paket</button>
             </div>
 
+            <!-- TABEL HASIL DAFTAR PAKET -->
             <div class="card" id="inputTableCard" style="display: none;">
                 <h2>Daftar List Paket Ter-Input</h2>
                 <div class="table-responsive">
@@ -509,6 +518,7 @@
             </div>
         </div>
 
+        <!-- TAB 3: BASECAMP SORTIR -->
         <div id="basecampTab" class="tab-content">
             <div class="card">
                 <h2>Serah Terima & Marking Admin</h2>
@@ -524,6 +534,7 @@
             </div>
         </div>
 
+        <!-- TAB 4: MANIFEST RIDER -->
         <div id="manifestTab" class="tab-content">
             <div class="card">
                 <h2>Plotting Area & Manifest Karcis Rider</h2>
@@ -538,6 +549,7 @@
             </div>
         </div>
 
+        <!-- TAB 5: WA POD -->
         <div id="waTab" class="tab-content">
             <div class="card">
                 <h2>Verifikasi WA Group POD (Proof of Delivery)</h2>
@@ -624,21 +636,21 @@
                 }
             });
 
-            // 2. Bar Chart (Nominal COD per Desa)
+            // 2. Bar Chart (Jumlah Paket per Desa)
             const ctxBar = document.getElementById('barChart').getContext('2d');
             barChart = new Chart(ctxBar, {
                 type: 'bar',
                 data: {
                     labels: desaJatinangor,
                     datasets: [{
-                        label: 'Nominal COD (Rp)',
+                        label: 'Jumlah Paket (Pcs)',
                         data: new Array(12).fill(0),
                         backgroundColor: '#ee4d2d'
                     }]
                 },
                 options: {
                     responsive: true,
-                    scales: { y: { beginAtZero: true } }
+                    scales: { y: { beginAtZero: true, ticks: { precision: 0 } } }
                 }
             });
         }
@@ -651,8 +663,8 @@
             let codCekDuluCount = 0;
             let totalCodAmount = 0;
 
-            let desaCodMap = {};
-            desaJatinangor.forEach(d => desaCodMap[d] = 0);
+            let desaCountMap = {};
+            desaJatinangor.forEach(d => desaCountMap[d] = 0);
 
             inputPaketList.forEach(pkg => {
                 if (pkg.tipe === 'REGULER') regulerCount++;
@@ -664,8 +676,9 @@
                     totalCodAmount += (pkg.nominalCod || 0);
                 }
 
-                if (desaCodMap[pkg.desa] !== undefined) {
-                    desaCodMap[pkg.desa] += (pkg.nominalCod || 0);
+                // Menghitung jumlah fisik paket per desa
+                if (desaCountMap[pkg.desa] !== undefined) {
+                    desaCountMap[pkg.desa] += 1;
                 }
             });
 
@@ -680,7 +693,7 @@
             }
 
             if (barChart) {
-                barChart.data.datasets[0].data = desaJatinangor.map(d => desaCodMap[d]);
+                barChart.data.datasets[0].data = desaJatinangor.map(d => desaCountMap[d]);
                 barChart.update();
             }
         }
