@@ -19,7 +19,7 @@
 
     <style>
         :root {
-            --primary: #ee4d2d; /* Warna Orange Shopee */
+            --primary: #ee4d2d;
             --primary-dark: #d03e1f;
             --secondary: #2c3e50;
             --bg-light: #f4f6f9;
@@ -498,7 +498,7 @@
 
     <div class="container">
         
-        <!-- Navigation Bar -->
+        <!-- Navigation Bar Tabs -->
         <div class="step-nav">
             <button class="step-btn admin-restricted" onclick="switchTab('dashTab', this)">📈 Dashboard & Grafik</button>
             <button class="step-btn admin-restricted" onclick="switchTab('inputTab', this)">📦 Input Paket SPX</button>
@@ -508,7 +508,6 @@
 
         <!-- TAB 1: DASHBOARD & GRAFIK (ADMIN ONLY) -->
         <div id="dashTab" class="tab-content">
-            
             <div class="metrics-grid">
                 <div class="metric-card">
                     <div class="metric-info">
@@ -558,7 +557,6 @@
                     </div>
                 </div>
             </div>
-
         </div>
 
         <!-- TAB 2: INPUT PAKET (ADMIN ONLY) -->
@@ -566,13 +564,11 @@
             <div class="card">
                 <h2>Form Input Paket SPX</h2>
 
-                <!-- TANGGAL INPUT BERADA DI PALING ATAS -->
                 <div class="form-group">
                     <label>Tanggal Input <span class="required-star">*</span></label>
                     <input type="date" id="inputDate" class="form-control" required>
                 </div>
 
-                <!-- UPLOAD SCREENSHOT SCANNER -->
                 <div class="upload-box" onclick="document.getElementById('screenshotInput').click()">
                     <span style="font-size: 2rem;">📸</span>
                     <p>Upload Screenshot SPX (Mendukung Multi-Paket)</p>
@@ -715,7 +711,6 @@
                     <button class="btn" id="btnToggleCam" onclick="toggleCameraScanner()" style="flex: 1; background-color: var(--secondary);">📷 Buka Kamera Scan Barcode Resi</button>
                 </div>
 
-                <!-- KOTAK KAMERA HTML5 QRCODE -->
                 <div id="reader"></div>
 
                 <div class="form-group" style="margin-top: 15px;">
@@ -734,7 +729,6 @@
                     <button class="btn-danger-all" onclick="clearRiderManifest()">🗑️ Bersihkan List Rider</button>
                 </div>
 
-                <!-- RINGKASAN JUMLAH & COD RIDER -->
                 <div style="display: flex; gap: 15px; margin-bottom: 15px; flex-wrap: wrap;">
                     <div style="background: #fff5f2; padding: 10px 15px; border-radius: 8px; border-left: 4px solid var(--primary); flex: 1; min-width: 180px;">
                         <span style="font-size: 0.8rem; color: var(--text-muted); font-weight: bold;">TOTAL BARANG DIBAWA</span>
@@ -823,7 +817,9 @@
         try {
             firebase.initializeApp(firebaseConfig);
             db = firebase.database();
-        } catch (e) {}
+        } catch (e) {
+            console.log("Firebase init fail", e);
+        }
 
         let inputPaketList = [];
         let riderManifestList = [];
@@ -843,7 +839,8 @@
 
         document.addEventListener("DOMContentLoaded", function() {
             let today = new Date().toISOString().split('T')[0];
-            document.getElementById('inputDate').value = today;
+            let inputDateEl = document.getElementById('inputDate');
+            if (inputDateEl) inputDateEl.value = today;
 
             checkAdminAuthState();
             initCharts();
@@ -877,8 +874,8 @@
             let waNum = formatPhoneToWa(phoneStr);
             if (!waNum) return null;
             
-            let message = `Halo ${name || 'Kak'}, kami dari Kurir SPX Express Paket Gaskeun. Paket Anda dengan No Resi *${resi}* sedang dalam perjalanan pengiriman hari ini. Mohon pastikan penerima berada di tempat. Terima kasih!`;
-            return `https://wa.me/${waNum}?text=${encodeURIComponent(message)}`;
+            let message = "Halo " + (name || 'Kak') + ", kami dari Kurir SPX Express Paket Gaskeun. Paket Anda dengan No Resi *" + resi + "* sedang dalam perjalanan pengiriman hari ini. Mohon pastikan penerima berada di tempat. Terima kasih!";
+            return "https://wa.me/" + waNum + "?text=" + encodeURIComponent(message);
         }
 
         // EFEK SUARA "BIP" (WEB AUDIO API)
@@ -954,7 +951,7 @@
             if (matchResi) resiUpper = matchResi[0].toUpperCase();
 
             if (riderManifestList.some(item => item.resi === resiUpper)) {
-                alert(`⚠️ Resi ${resiUpper} sudah ada di list bawaan Rider!`);
+                alert("⚠️ Resi " + resiUpper + " sudah ada di list bawaan Rider!");
                 document.getElementById('riderManualScanInput').value = '';
                 return;
             }
@@ -1006,7 +1003,7 @@
             let totalCod = 0;
 
             if (riderManifestList.length === 0) {
-                tbody.innerHTML = `<tr><td colspan="10" style="text-align: center; color: var(--text-muted);">Belum ada barang yang discan oleh Rider. Silakan scan resi terlebih dahulu.</td></tr>`;
+                tbody.innerHTML = '<tr><td colspan="10" style="text-align: center; color: var(--text-muted);">Belum ada barang yang discan oleh Rider. Silakan scan resi terlebih dahulu.</td></tr>';
                 document.getElementById('riderTotalItems').innerText = '0 Paket';
                 document.getElementById('riderTotalCod').innerText = 'Rp 0';
                 return;
@@ -1017,9 +1014,9 @@
                 let badgeClass = item.tipe === 'REGULER' ? 'badge-reg' : (item.tipe === 'COD' ? 'badge-cod' : 'badge-cek');
 
                 let waLink = getWaLink(item.phone, item.resi, item.receiver);
-                let phoneBtn = item.phone ? `<a href="tel:${item.phone}" class="btn-action btn-phone" title="Telepon Langsung">📞 Call</a>` : '';
-                let waBtn = waLink ? `<a href="${waLink}" target="_blank" class="btn-action btn-wa" title="Chat WhatsApp">💬 WA</a>` : '';
-                let contactDisplay = (item.phone && item.phone !== '-') ? `<div><strong>${item.phone}</strong></div><div style="margin-top: 4px;">${waBtn}${phoneBtn}</div>` : '-';
+                let phoneBtn = item.phone ? '<a href="tel:' + item.phone + '" class="btn-action btn-phone" title="Telepon Langsung">📞 Call</a>' : '';
+                let waBtn = waLink ? '<a href="' + waLink + '" target="_blank" class="btn-action btn-wa" title="Chat WhatsApp">💬 WA</a>' : '';
+                let contactDisplay = (item.phone && item.phone !== '-') ? '<div><strong>' + item.phone + '</strong></div><div style="margin-top: 4px;">' + waBtn + phoneBtn + '</div>' : '-';
 
                 tbody.innerHTML += `
                     <tr>
@@ -1062,9 +1059,12 @@
             if ((tabId === 'dashTab' || tabId === 'inputTab') && !isAdminLoggedIn()) {
                 pendingTabTarget = tabId;
                 pendingBtnElement = btnElement;
-                document.getElementById('loginModal').style.display = 'flex';
-                document.getElementById('loginErrorMsg').style.display = 'none';
-                document.getElementById('loginPass').value = '';
+                let modal = document.getElementById('loginModal');
+                if (modal) {
+                    modal.style.display = 'flex';
+                    document.getElementById('loginErrorMsg').style.display = 'none';
+                    document.getElementById('loginPass').value = '';
+                }
                 return;
             }
 
@@ -1078,7 +1078,8 @@
             let btns = document.querySelectorAll('.step-btn');
             btns.forEach(btn => btn.classList.remove('active'));
 
-            document.getElementById(tabId).classList.add('active');
+            let targetTab = document.getElementById(tabId);
+            if (targetTab) targetTab.classList.add('active');
             if (btnElement) btnElement.classList.add('active');
         }
 
@@ -1102,7 +1103,8 @@
         }
 
         function closeLoginModal() {
-            document.getElementById('loginModal').style.display = 'none';
+            let modal = document.getElementById('loginModal');
+            if (modal) modal.style.display = 'none';
         }
 
         function logoutAdmin() {
@@ -1129,7 +1131,11 @@
         }
 
         function initCharts() {
-            const ctxDonut = document.getElementById('donutChart').getContext('2d');
+            let ctxDonutEl = document.getElementById('donutChart');
+            let ctxBarEl = document.getElementById('barChart');
+            if (!ctxDonutEl || !ctxBarEl) return;
+
+            const ctxDonut = ctxDonutEl.getContext('2d');
             donutChart = new Chart(ctxDonut, {
                 type: 'doughnut',
                 data: {
@@ -1145,7 +1151,7 @@
                 }
             });
 
-            const ctxBar = document.getElementById('barChart').getContext('2d');
+            const ctxBar = ctxBarEl.getContext('2d');
             barChart = new Chart(ctxBar, {
                 type: 'bar',
                 data: {
@@ -1188,10 +1194,15 @@
                 }
             });
 
-            document.getElementById('dashTotalPaket').innerText = totalPaket;
-            document.getElementById('dashReguler').innerText = regulerCount;
-            document.getElementById('dashCodCount').innerText = codCount + codCekDuluCount;
-            document.getElementById('dashTotalCodAmount').innerText = 'Rp ' + totalCodAmount.toLocaleString();
+            let totalPaketEl = document.getElementById('dashTotalPaket');
+            let regEl = document.getElementById('dashReguler');
+            let codEl = document.getElementById('dashCodCount');
+            let totalCodEl = document.getElementById('dashTotalCodAmount');
+
+            if (totalPaketEl) totalPaketEl.innerText = totalPaket;
+            if (regEl) regEl.innerText = regulerCount;
+            if (codEl) codEl.innerText = codCount + codCekDuluCount;
+            if (totalCodEl) totalCodEl.innerText = 'Rp ' + totalCodAmount.toLocaleString();
 
             if (donutChart) {
                 donutChart.data.datasets[0].data = [regulerCount, codCount, codCekDuluCount];
@@ -1230,7 +1241,6 @@
             return "-";
         }
 
-        // PENYESUAIAN OCR KHUSUS TAMPILAN ORDER INFO SPX
         function parseMultiSpxOcrText(rawText) {
             let alertBox = document.getElementById('uploadAlert');
             let dateVal = document.getElementById('inputDate').value;
@@ -1250,7 +1260,6 @@
                 let endIndex = (i < matches.length - 1) ? matches[i+1].index : rawText.length;
                 let blockText = rawText.substring(startIndex, endIndex);
 
-                // 1. Dapatkan Alamat Lengkap dari Kotak Utama (Abaikan Blok "Alamat Rekomendasi")
                 let addressText = "";
                 let recIndex = blockText.search(/Alamat\s*Rekomendasi/i);
                 if (recIndex !== -1) {
@@ -1260,12 +1269,9 @@
                     addressText = (recvIndex !== -1) ? blockText.substring(0, recvIndex) : blockText;
                 }
                 
-                // Bersihkan No Resi dari Alamat
-                let detailAddr = addressText.replace(/SPXID[A-Z0-9]+/gi, '').replace(/
-+/g, ', ').trim();
+                let detailAddr = addressText.replace(/SPXID[A-Z0-9]+/gi, '').replace(/[\r\n]+/g, ', ').trim();
                 detailAddr = detailAddr.replace(/^[\s,]+|[\s,]+$/g, '');
 
-                // 2. Dapatkan Receiver Information (Nama & No HP)
                 let receiverName = "-";
                 let phoneNumber = "-";
 
@@ -1275,15 +1281,12 @@
                     receiverBlock = rMatch[1];
                 }
 
-                // Ekstrak No HP (format Tel: +62... / 08...)
                 let phoneMatch = receiverBlock.match(/(?:\+?62|08)\d{8,12}/);
                 if (phoneMatch) {
                     phoneNumber = phoneMatch[0];
                 }
 
-                // Ekstrak Nama Penerima (Tepat sebelum Tel / No HP)
-                let lines = receiverBlock.split('
-').map(l => l.trim()).filter(l => l.length > 0);
+                let lines = receiverBlock.split(/[\r\n]+/).map(l => l.trim()).filter(l => l.length > 0);
                 for (let line of lines) {
                     if (/Receiver\s*Information|Tel:|Tel|\+62|08|Assigned|Hub/i.test(line)) continue;
                     if (line.length >= 2) {
@@ -1292,18 +1295,16 @@
                     }
                 }
 
-                // 3. Tentukan Desa Jatinangor & Patokan
                 let patokan = extractPatokan(detailAddr);
                 let desaFound = "Cileles";
                 for (let d of desaJatinangor) {
                     if (new RegExp(d, 'i').test(blockText)) { desaFound = d; break; }
                 }
 
-                // 4. Tipe & Nominal COD
                 let tipe = "REGULER";
                 let nominalCod = 0;
                 if (/COD\s*Cek\s*Dulu/i.test(blockText)) tipe = "COD CEK DULU";
-                else if (/COD/i.test(blockText)) tipe = "COD";
+                else if (/ COD /i.test(blockText)) tipe = "COD";
 
                 let codMatch = blockText.match(/COD:\s*([\d\.\,]+)/i) || blockText.match(/(\d[\d\.\,]*)\s*IDR/i);
                 if (codMatch) nominalCod = parseInt(codMatch[1].replace(/[^\d]/g, '')) || 0;
@@ -1319,7 +1320,7 @@
 
             alertBox.style.display = 'block';
             alertBox.className = newAdded > 0 ? 'upload-alert success' : 'upload-alert danger';
-            alertBox.innerText = `✅ Berhasil memproses & memperbarui ${newAdded} paket dari Screenshot!`;
+            alertBox.innerText = "✅ Berhasil memproses & memperbarui " + newAdded + " paket dari Screenshot!";
         }
 
         function processInputPaketManual() {
@@ -1339,7 +1340,7 @@
             }
 
             if (!editingResi && inputPaketList.some(pkg => pkg.resi === resi)) {
-                alert(`🚫 No Resi ${resi} sudah ada di sistem!`);
+                alert("🚫 No Resi " + resi + " sudah ada di sistem!");
                 return;
             }
 
@@ -1401,7 +1402,7 @@
         }
 
         function deletePaket(resi) {
-            if (confirm(`Apakah Anda yakin ingin menghapus resi ${resi}?`)) {
+            if (confirm("Apakah Anda yakin ingin menghapus resi " + resi + "?")) {
                 if (db) db.ref('paket_input/' + resi).remove();
             }
         }
@@ -1445,7 +1446,7 @@
             tbody.innerHTML = '';
 
             if (inputPaketList.length === 0) {
-                tbody.innerHTML = `<tr><td colspan="11" style="text-align:center; color: var(--text-muted);">Belum ada data paket yang ter-input.</td></tr>`;
+                tbody.innerHTML = '<tr><td colspan="11" style="text-align:center; color: var(--text-muted);">Belum ada data paket yang ter-input.</td></tr>';
                 return;
             }
 
@@ -1467,9 +1468,9 @@
                 let badgeClass = item.tipe === 'REGULER' ? 'badge-reg' : (item.tipe === 'COD' ? 'badge-cod' : 'badge-cek');
                 
                 let waLink = getWaLink(item.phone, item.resi, item.receiver);
-                let phoneBtn = item.phone ? `<a href="tel:${item.phone}" class="btn-action btn-phone" title="Telepon Langsung">📞 Call</a>` : '';
-                let waBtn = waLink ? `<a href="${waLink}" target="_blank" class="btn-action btn-wa" title="Chat WhatsApp">💬 WA</a>` : '';
-                let contactDisplay = (item.phone && item.phone !== '-') ? `<div><strong>${item.phone}</strong></div><div style="margin-top: 4px;">${waBtn}${phoneBtn}</div>` : '-';
+                let phoneBtn = item.phone ? '<a href="tel:' + item.phone + '" class="btn-action btn-phone" title="Telepon Langsung">📞 Call</a>' : '';
+                let waBtn = waLink ? '<a href="' + waLink + '" target="_blank" class="btn-action btn-wa" title="Chat WhatsApp">💬 WA</a>' : '';
+                let contactDisplay = (item.phone && item.phone !== '-') ? '<div><strong>' + item.phone + '</strong></div><div style="margin-top: 4px;">' + waBtn + phoneBtn + '</div>' : '-';
 
                 tbody.innerHTML += `
                     <tr>
