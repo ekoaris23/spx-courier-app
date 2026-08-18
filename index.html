@@ -89,7 +89,7 @@
         }
 
         .container {
-            max-width: 1200px;
+            max-width: 1250px;
             margin: 20px auto;
             padding: 0 15px;
         }
@@ -242,6 +242,11 @@
             color: var(--text-dark);
         }
 
+        .required-star {
+            color: var(--danger);
+            font-weight: bold;
+        }
+
         .form-control {
             width: 100%;
             padding: 10px 12px;
@@ -332,6 +337,20 @@
             padding: 3px 8px;
             border-radius: 4px;
         }
+
+        /* Action Buttons */
+        .btn-action {
+            padding: 5px 10px;
+            border: none;
+            border-radius: 4px;
+            font-size: 0.78rem;
+            font-weight: bold;
+            cursor: pointer;
+            transition: opacity 0.2s;
+        }
+        .btn-action:hover { opacity: 0.8; }
+        .btn-edit { background-color: #ffc107; color: #333; margin-right: 4px; }
+        .btn-delete { background-color: #dc3545; color: white; }
 
         .tab-content { display: none; }
         .tab-content.active { display: block; }
@@ -431,8 +450,8 @@
                 <div id="uploadAlert" class="upload-alert"></div>
                 
                 <div class="form-group">
-                    <label>Tanggal Input</label>
-                    <input type="date" id="inputDate" class="form-control">
+                    <label>Tanggal Input <span class="required-star">*</span></label>
+                    <input type="date" id="inputDate" class="form-control" required>
                 </div>
 
                 <div class="form-group">
@@ -441,8 +460,8 @@
                 </div>
 
                 <div class="form-group">
-                    <label>Kelurahan / Desa</label>
-                    <select id="inputDesa" class="form-control">
+                    <label>Kelurahan / Desa <span class="required-star">*</span></label>
+                    <select id="inputDesa" class="form-control" required>
                         <option value="Cikeruh">Desa Cikeruh</option>
                         <option value="Cilayung">Desa Cilayung</option>
                         <option value="Cileles">Desa Cileles</option>
@@ -459,43 +478,51 @@
                 </div>
 
                 <div class="form-group">
-                    <label>Tipe Paket & Nominal COD</label>
+                    <label>Tipe Paket & Nominal COD <span class="required-star">*</span></label>
                     <div style="display: flex; gap: 10px;">
-                        <select id="inputTipe" class="form-control" style="flex: 1;">
+                        <select id="inputTipe" class="form-control" style="flex: 1;" required>
                             <option value="REGULER">REGULER</option>
                             <option value="COD">COD</option>
                             <option value="COD CEK DULU">COD CEK DULU</option>
                         </select>
-                        <input type="number" id="inputNominalCod" class="form-control" placeholder="Nominal COD (Rp)" style="flex: 1;" value="0">
+                        <input type="number" id="inputNominalCod" class="form-control" placeholder="Nominal COD (Rp)" style="flex: 1;" value="0" required>
                     </div>
                 </div>
 
                 <div class="form-group">
-                    <label>ID Paket / No Resi SPX</label>
-                    <input type="text" id="inputIdPaket" class="form-control" placeholder="Terisi otomatis dari Foto atau Tempel No Resi...">
+                    <label>ID Paket / No Resi SPX <span class="required-star">*</span></label>
+                    <input type="text" id="inputIdPaket" class="form-control" placeholder="No Resi SPX (Wajib diisi)..." required>
                 </div>
 
                 <div class="form-group">
-                    <label>Detail Alamat / Catatan Lengkap (Opsional)</label>
-                    <input type="text" id="inputAddressDetail" class="form-control" placeholder="Contoh: RT.3/RW.4, Dsn Cinenggang, Dsa Cileles">
+                    <label>Detail Alamat / Catatan Lengkap <span class="required-star">*</span></label>
+                    <input type="text" id="inputAddressDetail" class="form-control" placeholder="Contoh: RT.3/RW.4, Dsn Cinenggang, Dsa Cileles" required>
                 </div>
 
                 <div class="form-group">
-                    <label>Patokan Lokasi (Terisi Otomatis / Custom)</label>
-                    <input type="text" id="inputPatokan" class="form-control" placeholder="Contoh: Dsn Cinenggang / Jalan Manglayang">
+                    <label>Patokan Lokasi <span class="required-star">*</span></label>
+                    <input type="text" id="inputPatokan" class="form-control" placeholder="Contoh: Dsn Cinenggang / Jalan Manglayang" required>
                 </div>
 
                 <div class="form-group">
-                    <label>Nama Penerima (Opsional)</label>
-                    <input type="text" id="inputReceiver" class="form-control" placeholder="Contoh: Fitri Andriyani">
+                    <label>Nama Penerima <span class="required-star">*</span></label>
+                    <input type="text" id="inputReceiver" class="form-control" placeholder="Contoh: Fitri Andriyani" required>
                 </div>
 
-                <button class="btn" onclick="processInputPaketManual()">Proses & Tampilkan Detail Paket</button>
+                <button class="btn" id="btnSubmitForm" onclick="processInputPaketManual()">Proses & Simpan Paket</button>
             </div>
 
-            <!-- TABEL HASIL DAFTAR PAKET -->
+            <!-- TABEL HASIL DAFTAR PAKET TER-INPUT -->
             <div class="card" id="inputTableCard" style="display: none;">
-                <h2>Daftar List Paket Ter-Input</h2>
+                <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px; margin-bottom: 15px;">
+                    <h2 style="border-bottom: none; margin-bottom: 0; padding-bottom: 0;">Daftar List Paket Ter-Input</h2>
+                    
+                    <!-- Search Input Box -->
+                    <div style="position: relative; width: 300px; max-width: 100%;">
+                        <input type="text" id="tableSearchInput" class="form-control" placeholder="🔍 Cari Resi, Nama, Alamat, Patokan..." onkeyup="filterPaketTable()">
+                    </div>
+                </div>
+
                 <div class="table-responsive">
                     <table>
                         <thead>
@@ -509,6 +536,7 @@
                                 <th>Tipe</th>
                                 <th>COD (Rp)</th>
                                 <th>Tanggal</th>
+                                <th style="text-align: center;">Aksi</th>
                             </tr>
                         </thead>
                         <tbody id="inputPaketTableBody">
@@ -581,6 +609,7 @@
         let sortedPackages = [];
         let donutChart = null;
         let barChart = null;
+        let editingResi = null; // Status mode edit
 
         const desaJatinangor = [
             "Cikeruh", "Cilayung", "Cileles", "Cipacing", "Cisempur", 
@@ -597,11 +626,9 @@
             if (db) {
                 db.ref('paket_input').on('value', (snapshot) => {
                     const data = snapshot.val();
-                    if (data) {
-                        inputPaketList = Object.values(data);
-                        renderInputPaketTable();
-                        updateDashboardMetrics();
-                    }
+                    inputPaketList = data ? Object.values(data) : [];
+                    renderInputPaketTable();
+                    updateDashboardMetrics();
                 });
             }
         });
@@ -619,7 +646,6 @@
 
         // INISIALISASI GRAFIK CHART.JS
         function initCharts() {
-            // 1. Donut Chart (Tipe Paket)
             const ctxDonut = document.getElementById('donutChart').getContext('2d');
             donutChart = new Chart(ctxDonut, {
                 type: 'doughnut',
@@ -636,7 +662,6 @@
                 }
             });
 
-            // 2. Bar Chart (Jumlah Paket per Desa)
             const ctxBar = document.getElementById('barChart').getContext('2d');
             barChart = new Chart(ctxBar, {
                 type: 'bar',
@@ -676,7 +701,6 @@
                     totalCodAmount += (pkg.nominalCod || 0);
                 }
 
-                // Menghitung jumlah fisik paket per desa
                 if (desaCountMap[pkg.desa] !== undefined) {
                     desaCountMap[pkg.desa] += 1;
                 }
@@ -772,7 +796,6 @@
                     detailAddr: detailAddr, patokan: patokan, tipe: tipe, nominalCod: nominalCod, timestamp: Date.now()
                 };
 
-                inputPaketList.push(newPaket);
                 if (db) db.ref('paket_input/' + resi).set(newPaket);
                 newAdded++;
             }
@@ -780,42 +803,115 @@
             alertBox.style.display = 'block';
             alertBox.className = newAdded > 0 ? 'upload-alert success' : 'upload-alert danger';
             alertBox.innerText = `✅ Berhasil tambah ${newAdded} paket baru!`;
-
-            renderInputPaketTable();
-            updateDashboardMetrics();
         }
 
+        // INPUT / EDIT MANUAL DENGAN VALIDASI WAJIB ISI
         function processInputPaketManual() {
             let dateVal = document.getElementById('inputDate').value;
             let resi = document.getElementById('inputIdPaket').value.trim().toUpperCase();
             let desa = document.getElementById('inputDesa').value;
-            let detailAddr = document.getElementById('inputAddressDetail').value.trim() || '-';
+            let detailAddr = document.getElementById('inputAddressDetail').value.trim();
             let patokanInput = document.getElementById('inputPatokan').value.trim();
-            let receiver = document.getElementById('inputReceiver').value.trim() || 'Penerima Paket';
+            let receiver = document.getElementById('inputReceiver').value.trim();
             let tipe = document.getElementById('inputTipe').value;
             let nominalCod = parseInt(document.getElementById('inputNominalCod').value) || 0;
 
-            if (!resi) return alert("Isi No Resi!");
+            // VALIDASI MANDATORI (WAJIB DIISI)
+            if (!dateVal || !resi || !detailAddr || !patokanInput || !receiver) {
+                alert("⚠️ Semua kolom bertanda bintang (*) WAJIB DIISI lengkap!");
+                return;
+            }
 
-            if (inputPaketList.some(pkg => pkg.resi === resi)) return alert("Resi Duplikat!");
+            // Cek duplikasi jika bukan dalam mode edit
+            if (!editingResi && inputPaketList.some(pkg => pkg.resi === resi)) {
+                alert(`🚫 No Resi ${resi} sudah ada di sistem!`);
+                return;
+            }
 
             let newPaket = {
-                date: dateVal, resi: resi, desa: desa, receiver: receiver,
-                detailAddr: detailAddr, patokan: patokanInput || extractPatokan(detailAddr),
-                tipe: tipe, nominalCod: nominalCod, timestamp: Date.now()
+                date: dateVal,
+                resi: resi,
+                desa: desa,
+                receiver: receiver,
+                detailAddr: detailAddr,
+                patokan: patokanInput,
+                tipe: tipe,
+                nominalCod: nominalCod,
+                timestamp: Date.now()
             };
 
-            inputPaketList.push(newPaket);
+            // Jika sedang mengedit resi lama yang diubah nomor resinya
+            if (editingResi && editingResi !== resi) {
+                if (db) db.ref('paket_input/' + editingResi).remove();
+            }
+
             if (db) db.ref('paket_input/' + resi).set(newPaket);
 
-            renderInputPaketTable();
-            updateDashboardMetrics();
+            alert(editingResi ? "✅ Data paket berhasil diperbarui!" : "✅ Data paket berhasil disimpan!");
+
+            // Reset Form & Status Edit
+            editingResi = null;
+            document.getElementById('btnSubmitForm').innerText = "Proses & Simpan Paket";
+            document.getElementById('inputIdPaket').value = '';
+            document.getElementById('inputAddressDetail').value = '';
+            document.getElementById('inputPatokan').value = '';
+            document.getElementById('inputReceiver').value = '';
+            document.getElementById('inputNominalCod').value = '0';
         }
 
+        // EDIT DATA PAKET
+        function editPaket(resi) {
+            let pkg = inputPaketList.find(p => p.resi === resi);
+            if (!pkg) return;
+
+            editingResi = resi;
+            document.getElementById('inputDate').value = pkg.date;
+            document.getElementById('inputIdPaket').value = pkg.resi;
+            document.getElementById('inputDesa').value = pkg.desa;
+            document.getElementById('inputAddressDetail').value = pkg.detailAddr;
+            document.getElementById('inputPatokan').value = pkg.patokan;
+            document.getElementById('inputReceiver').value = pkg.receiver;
+            document.getElementById('inputTipe').value = pkg.tipe;
+            document.getElementById('inputNominalCod').value = pkg.nominalCod || 0;
+
+            document.getElementById('btnSubmitForm').innerText = "💾 Simpan Perubahan Edit";
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+
+        // HAPUS DATA PAKET
+        function deletePaket(resi) {
+            if (confirm(`Apakah Anda yakin ingin menghapus resi ${resi}?`)) {
+                if (db) db.ref('paket_input/' + resi).remove();
+            }
+        }
+
+        // SEARCH FILTER TABEL (Mencari segala bentuk kata kunci)
+        function filterPaketTable() {
+            let input = document.getElementById("tableSearchInput").value.toLowerCase();
+            let tbody = document.getElementById("inputPaketTableBody");
+            let tr = tbody.getElementsByTagName("tr");
+
+            for (let i = 0; i < tr.length; i++) {
+                let rowText = tr[i].innerText.toLowerCase();
+                if (rowText.indexOf(input) > -1) {
+                    tr[i].style.display = "";
+                } else {
+                    tr[i].style.display = "none";
+                }
+            }
+        }
+
+        // RENDER TABEL
         function renderInputPaketTable() {
             let tbody = document.getElementById('inputPaketTableBody');
             document.getElementById('inputTableCard').style.display = 'block';
             tbody.innerHTML = '';
+
+            if (inputPaketList.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="10" style="text-align:center; color: var(--text-muted);">Belum ada data paket yang ter-input.</td></tr>`;
+                return;
+            }
+
             inputPaketList.forEach((item, index) => {
                 let badgeClass = item.tipe === 'REGULER' ? 'badge-reg' : (item.tipe === 'COD' ? 'badge-cod' : 'badge-cek');
                 tbody.innerHTML += `
@@ -828,10 +924,17 @@
                         <td>Desa ${item.desa}</td>
                         <td><span class="badge ${badgeClass}">${item.tipe}</span></td>
                         <td>Rp ${(item.nominalCod || 0).toLocaleString()}</td>
-                        <td>${item.date}</td>
+                        <td style="white-space: nowrap;">${item.date}</td>
+                        <td style="text-align: center; white-space: nowrap;">
+                            <button class="btn-action btn-edit" onclick="editPaket('${item.resi}')">✏️ Edit</button>
+                            <button class="btn-action btn-delete" onclick="deletePaket('${item.resi}')">🗑️ Hapus</button>
+                        </td>
                     </tr>
                 `;
             });
+
+            // Jalankan filter jika sedang ada kata kunci di kolom search
+            filterPaketTable();
         }
 
         function processAdminSort() { alert("Fitur Sortir Basecamp Berjalan."); }
