@@ -431,6 +431,8 @@
         .btn-delete { background-color: #dc3545; color: white; margin-right: 4px; }
         .btn-wa { background-color: #25D366; color: white; margin-right: 4px; }
         .btn-phone { background-color: #007bff; color: white; }
+        .btn-reset-status { background-color: #17a2b8; color: white; cursor: pointer; }
+        .btn-reset-status:hover { background-color: #138496; }
 
         .tab-content { display: none; }
         .tab-content.active { display: block; }
@@ -1373,7 +1375,7 @@
             }
         }
 
-        // BUKA MODAL VERIFIKASI BUKTI FOTO (POD) - DIREVISI MENGGUNAKAN DATASET
+        // BUKA MODAL VERIFIKASI BUKTI FOTO (POD)
         function openPodVerificationModalByElem(elem) {
             let resi = elem.getAttribute('data-resi');
             let tipe = elem.getAttribute('data-tipe');
@@ -1409,6 +1411,17 @@
 
         function closePodModal() {
             document.getElementById('podModal').style.display = 'none';
+        }
+
+        // FITUR KHUSUS ADMIN: RESET STATUS TERKIRIM KEMBALI KE PENDING
+        function resetStatusToPending(elem) {
+            let resi = elem.getAttribute('data-resi');
+            if (!resi) return;
+
+            if (confirm("⚠️ KONFIRMASI ADMIN:\n\nApakah Anda ingin mengembalikan status paket " + resi + " dari TERKIRIM menjadi BELUM TERKIRIM (PENDING)?\n\n(Lakukan ini jika bukti foto dari kurir tidak jelas/salah).")) {
+                if (db) db.ref('paket_input/' + resi + '/status').set('PENDING');
+                alert("🔄 Status paket " + resi + " berhasil dikembalikan ke PENDING.");
+            }
         }
 
         // VALIDASI INPUT MINIMAL BUKTI FOTO/VIDEO UNTUK POD
@@ -1552,9 +1565,17 @@
                 let contactDisplay = (item.phone && item.phone !== '-') ? '<div><strong>' + item.phone + '</strong></div><div style="margin-top: 4px;">' + waBtn + phoneBtn + '</div>' : '-';
 
                 let isDelivered = item.status === 'DELIVERED';
-                let statusBtnHtml = isDelivered ? 
-                    '<span class="badge badge-reg">✅ TERKIRIM</span>' : 
-                    '<button type="button" class="btn-action btn-wa" data-resi="' + item.resi + '" data-tipe="' + item.tipe + '" onclick="openPodVerificationModalByElem(this)">✔️ Tandai Terkirim</button>';
+                let statusBtnHtml = '';
+
+                if (isDelivered) {
+                    if (isAdmin) {
+                        statusBtnHtml = '<button type="button" class="btn-action btn-reset-status" data-resi="' + item.resi + '" onclick="resetStatusToPending(this)" title="Klik untuk mengembalikan ke status belum terkirim">✅ TERKIRIM (Reset 🔄)</button>';
+                    } else {
+                        statusBtnHtml = '<span class="badge badge-reg">✅ TERKIRIM</span>';
+                    }
+                } else {
+                    statusBtnHtml = '<button type="button" class="btn-action btn-wa" data-resi="' + item.resi + '" data-tipe="' + item.tipe + '" onclick="openPodVerificationModalByElem(this)">✔️ Tandai Terkirim</button>';
+                }
 
                 let riderCell = isShowAllMode ? '<td><span class="badge-rider">🛵 ' + item.assignedRider + '</span></td>' : '';
 
