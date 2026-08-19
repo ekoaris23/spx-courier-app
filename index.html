@@ -407,6 +407,15 @@
             border-radius: 4px;
         }
 
+        .badge-rider {
+            background-color: #2c3e50;
+            color: #ffffff;
+            font-weight: bold;
+            font-size: 0.75rem;
+            padding: 3px 8px;
+            border-radius: 4px;
+        }
+
         .btn-action {
             padding: 5px 10px;
             border: none;
@@ -856,9 +865,9 @@
                 </div>
 
                 <div class="table-responsive">
-                    <table>
+                    <table id="riderManifestTable">
                         <thead>
-                            <tr>
+                            <tr id="manifestTableHeader">
                                 <th>No</th>
                                 <th>No Resi SPX</th>
                                 <th>Nama Penerima</th>
@@ -1144,6 +1153,10 @@
             let currentVal = select.value;
 
             select.innerHTML = '<option value="">-- Pilih Rider --</option>';
+            if (isAdminLoggedIn()) {
+                select.innerHTML += '<option value="ALL_ADMIN">-- Tampilkan Semua Paket Rider (Admin) --</option>';
+            }
+
             riderList.forEach(function(r) {
                 select.innerHTML += '<option value="' + r.name + '">' + r.name + ' (' + r.motor + ')</option>';
             });
@@ -1201,8 +1214,8 @@
         // FULL SCREEN CAMERA SCANNER FUNCTIONS
         function openCameraModal() {
             let selectedRider = document.getElementById('riderSelect').value;
-            if (!selectedRider) {
-                alert("⚠️ Silakan PILIH RIDER terlebih dahulu sebelum membuka kamera scan!");
+            if (!selectedRider || selectedRider === 'ALL_ADMIN') {
+                alert("⚠️ Silakan PILIH RIDER spesifik terlebih dahulu sebelum membuka kamera scan!");
                 return;
             }
 
@@ -1253,8 +1266,8 @@
 
         function addResiToRiderManifest(rawResi) {
             let selectedRider = document.getElementById('riderSelect').value;
-            if (!selectedRider) {
-                alert("⚠️ Silakan PILIH RIDER terlebih dahulu sebelum menambahkan resi!");
+            if (!selectedRider || selectedRider === 'ALL_ADMIN') {
+                alert("⚠️ Silakan PILIH RIDER spesifik terlebih dahulu sebelum menambahkan resi!");
                 return;
             }
 
@@ -1318,8 +1331,8 @@
 
         function clearRiderManifest() {
             let selectedRider = document.getElementById('riderSelect').value;
-            if (!selectedRider) {
-                alert("Pilih rider terlebih dahulu!");
+            if (!selectedRider || selectedRider === 'ALL_ADMIN') {
+                alert("Pilih rider spesifik terlebih dahulu!");
                 return;
             }
 
@@ -1337,26 +1350,69 @@
 
         function renderRiderManifestTable() {
             let tbody = document.getElementById('riderManifestTableBody');
-            if (!tbody) return;
+            let headerRow = document.getElementById('manifestTableHeader');
+            if (!tbody || !headerRow) return;
+            
             tbody.innerHTML = '';
 
             let selectedRider = document.getElementById('riderSelect').value;
+            let isAdmin = isAdminLoggedIn();
             let totalCod = 0;
 
-            if (!selectedRider) {
+            // Atur header tabel secara dinamis (tambah kolom "Kurir / Rider" untuk Admin / Opsi ALL_ADMIN)
+            let isShowAllMode = (selectedRider === 'ALL_ADMIN') || (isAdmin && !selectedRider);
+
+            if (isShowAllMode) {
+                headerRow.innerHTML = '<th>No</th>' +
+                    '<th>Kurir / Rider</th>' +
+                    '<th>No Resi SPX</th>' +
+                    '<th>Nama Penerima</th>' +
+                    '<th>No. HP / WA</th>' +
+                    '<th>Alamat Lengkap</th>' +
+                    '<th>Patokan</th>' +
+                    '<th>Desa</th>' +
+                    '<th>Tipe</th>' +
+                    '<th>COD (Rp)</th>' +
+                    '<th>Status Kirim</th>' +
+                    '<th style="text-align: center;">Aksi</th>';
+            } else {
+                headerRow.innerHTML = '<th>No</th>' +
+                    '<th>No Resi SPX</th>' +
+                    '<th>Nama Penerima</th>' +
+                    '<th>No. HP / WA</th>' +
+                    '<th>Alamat Lengkap</th>' +
+                    '<th>Patokan</th>' +
+                    '<th>Desa</th>' +
+                    '<th>Tipe</th>' +
+                    '<th>COD (Rp)</th>' +
+                    '<th>Status Kirim</th>' +
+                    '<th style="text-align: center;">Aksi</th>';
+            }
+
+            if (!selectedRider && !isAdmin) {
                 tbody.innerHTML = '<tr><td colspan="11" style="text-align: center; color: var(--text-muted);">Silakan pilih Rider terlebih dahulu di atas.</td></tr>';
                 document.getElementById('riderTotalItems').innerText = '0 Paket';
                 document.getElementById('riderTotalCod').innerText = 'Rp 0';
                 return;
             }
 
-            // Filter data langsung dari Firebase berdasarkan rider yang dipilih
-            let filteredList = inputPaketList.filter(function(pkg) {
-                return pkg.assignedRider === selectedRider;
-            });
+            // Filter data paket
+            let filteredList = [];
+            if (isShowAllMode) {
+                // Tampilkan semua paket yang memiliki assignedRider
+                filteredList = inputPaketList.filter(function(pkg) {
+                    return pkg.assignedRider && pkg.assignedRider.trim() !== '';
+                });
+            } else {
+                filteredList = inputPaketList.filter(function(pkg) {
+                    return pkg.assignedRider === selectedRider;
+                });
+            }
 
             if (filteredList.length === 0) {
-                tbody.innerHTML = '<tr><td colspan="11" style="text-align: center; color: var(--text-muted);">Belum ada barang yang discan/dibawa oleh Rider ' + selectedRider + '.</td></tr>';
+                let msg = isShowAllMode ? 'Belum ada paket yang dibawa oleh rider manapun.' : 'Belum ada barang yang discan/dibawa oleh Rider ' + selectedRider + '.';
+                let colSpanCount = isShowAllMode ? 12 : 11;
+                tbody.innerHTML = '<tr><td colspan="' + colSpanCount + '" style="text-align: center; color: var(--text-muted);">' + msg + '</td></tr>';
                 document.getElementById('riderTotalItems').innerText = '0 Paket';
                 document.getElementById('riderTotalCod').innerText = 'Rp 0';
                 return;
@@ -1376,8 +1432,11 @@
                     '<span class="badge badge-reg">✅ TERKIRIM</span>' : 
                     '<button class="btn-action btn-wa" onclick="updatePaketStatus(\'' + item.resi + '\', \'DELIVERED\')">✔️ Tandai Terkirim</button>';
 
+                let riderCell = isShowAllMode ? '<td><span class="badge-rider">🛵 ' + item.assignedRider + '</span></td>' : '';
+
                 tbody.innerHTML += '<tr>' +
                     '<td>' + (index + 1) + '</td>' +
+                    riderCell +
                     '<td><strong>' + item.resi + '</strong></td>' +
                     '<td>' + (item.receiver || '-') + '</td>' +
                     '<td style="white-space: nowrap;">' + contactDisplay + '</td>' +
@@ -1407,6 +1466,7 @@
                 document.getElementById('userStatusText').innerText = 'Akses Kurir (Public)';
                 document.getElementById('btnLogout').style.display = 'none';
             }
+            updateRiderSelectOptions();
         }
 
         function switchTab(tabId, btnElement) {
