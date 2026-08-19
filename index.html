@@ -424,6 +424,7 @@
             display: inline-flex;
             align-items: center;
             gap: 4px;
+            -webkit-tap-highlight-color: transparent;
         }
         .btn-action:hover { opacity: 0.85; }
         .btn-edit { background-color: #ffc107; color: #333; margin-right: 4px; }
@@ -1372,10 +1373,15 @@
             }
         }
 
-        // BUKA MODAL VERIFIKASI BUKTI FOTO (POD)
-        function openPodVerificationModal(resi, tipe) {
+        // BUKA MODAL VERIFIKASI BUKTI FOTO (POD) - DIREVISI MENGGUNAKAN DATASET
+        function openPodVerificationModalByElem(elem) {
+            let resi = elem.getAttribute('data-resi');
+            let tipe = elem.getAttribute('data-tipe');
+
+            if (!resi) return;
+
             document.getElementById('podResiTarget').value = resi;
-            document.getElementById('podTipeTarget').value = tipe;
+            document.getElementById('podTipeTarget').value = tipe || 'REGULER';
 
             // Reset input file
             document.getElementById('podFoto1').value = '';
@@ -1548,7 +1554,7 @@
                 let isDelivered = item.status === 'DELIVERED';
                 let statusBtnHtml = isDelivered ? 
                     '<span class="badge badge-reg">✅ TERKIRIM</span>' : 
-                    '<button class="btn-action btn-wa" onclick="openPodVerificationModal(\'' + item.resi + '\', \'' + item.tipe + '\')">✔️ Tandai Terkirim</button>';
+                    '<button type="button" class="btn-action btn-wa" data-resi="' + item.resi + '" data-tipe="' + item.tipe + '" onclick="openPodVerificationModalByElem(this)">✔️ Tandai Terkirim</button>';
 
                 let riderCell = isShowAllMode ? '<td><span class="badge-rider">🛵 ' + item.assignedRider + '</span></td>' : '';
 
