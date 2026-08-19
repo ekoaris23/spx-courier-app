@@ -118,7 +118,6 @@
             padding: 0 15px;
         }
 
-        /* Navigation Bar Tabs */
         .step-nav {
             display: flex;
             overflow-x: auto;
@@ -159,7 +158,6 @@
             font-size: 0.8rem;
         }
 
-        /* Metrics Grid Dashboard */
         .metrics-grid {
             display: grid;
             grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
@@ -207,7 +205,6 @@
             background: #f8f9fa;
         }
 
-        /* Charts Grid */
         .charts-grid {
             display: grid;
             grid-template-columns: repeat(auto-fit, minmax(450px, 1fr));
@@ -240,7 +237,6 @@
             padding-bottom: 10px;
         }
 
-        /* Form Card */
         .card {
             background: var(--card-bg);
             border-radius: 12px;
@@ -438,7 +434,7 @@
         .tab-content { display: none; }
         .tab-content.active { display: block; }
 
-        /* MODAL POPUP LOGIN ADMIN */
+        /* MODAL POPUP GENERAL STYLING */
         .modal-overlay {
             display: none;
             position: fixed;
@@ -447,6 +443,8 @@
             z-index: 9999;
             align-items: center;
             justify-content: center;
+            overflow-y: auto;
+            padding: 20px 0;
         }
 
         .modal-box {
@@ -454,20 +452,39 @@
             padding: 25px;
             border-radius: 12px;
             width: 90%;
-            max-width: 380px;
+            max-width: 480px;
             box-shadow: 0 10px 25px rgba(0,0,0,0.2);
-            text-align: center;
+            max-height: 90vh;
+            overflow-y: auto;
         }
 
         .modal-box h3 {
             color: var(--primary);
             margin-bottom: 10px;
+            text-align: center;
         }
 
         .modal-box p {
             font-size: 0.85rem;
             color: var(--text-muted);
             margin-bottom: 15px;
+            text-align: center;
+        }
+
+        .pod-upload-item {
+            background: #f8f9fa;
+            border: 1px dashed var(--border);
+            padding: 10px;
+            border-radius: 6px;
+            margin-bottom: 10px;
+        }
+
+        .pod-upload-item label {
+            font-size: 0.8rem;
+            font-weight: bold;
+            display: block;
+            margin-bottom: 4px;
+            color: var(--secondary);
         }
 
         .login-error {
@@ -949,6 +966,47 @@
         </div>
     </div>
 
+    <!-- MODAL FORM PROOF OF DELIVERY (POD) -->
+    <div id="podModal" class="modal-overlay">
+        <div class="modal-box">
+            <h3>📸 Bukti Pengiriman Paket (POD)</h3>
+            <p id="podModalSubtitle">Lengkapi foto & video bukti serah terima paket.</p>
+            
+            <input type="hidden" id="podResiTarget">
+            <input type="hidden" id="podTipeTarget">
+
+            <div class="pod-upload-item">
+                <label>Foto 1 : Foto Resi Paket <span class="required-star">*</span></label>
+                <input type="file" id="podFoto1" class="form-control" accept="image/*">
+            </div>
+
+            <div class="pod-upload-item">
+                <label>Foto 2 : Paket Pegang Kurir Menghadap Rumah <span class="required-star">*</span></label>
+                <input type="file" id="podFoto2" class="form-control" accept="image/*">
+            </div>
+
+            <div class="pod-upload-item">
+                <label>Foto 3 : Paket di Penerima / Tempat Paket (Teras) <span class="required-star">*</span></label>
+                <input type="file" id="podFoto3" class="form-control" accept="image/*">
+            </div>
+
+            <div class="pod-upload-item" id="containerFoto4" style="display: none;">
+                <label id="labelFoto4">Foto 4 : Foto Uang / Bukti Transfer COD <span class="required-star">*</span></label>
+                <input type="file" id="podFoto4" class="form-control" accept="image/*">
+            </div>
+
+            <div class="pod-upload-item" id="containerVideo" style="display: none;">
+                <label>Video : Bukti Unboxing / Cek Dulu <span class="required-star">*</span></label>
+                <input type="file" id="podVideo" class="form-control" accept="video/*">
+            </div>
+
+            <div style="display: flex; gap: 10px; margin-top: 15px;">
+                <button class="btn btn-secondary" style="flex: 1;" onclick="closePodModal()">Batal</button>
+                <button class="btn" style="flex: 1; background-color: var(--success);" onclick="submitPodVerification()">✔️ Konfirmasi Terkirim</button>
+            </div>
+        </div>
+    </div>
+
     <!-- MODAL KAMERA SCANNER FULL SCREEN -->
     <div id="cameraModal" class="camera-modal-overlay">
         <div class="camera-modal-header">
@@ -1164,7 +1222,6 @@
             if (currentVal) select.value = currentVal;
         }
 
-        // RENDER TERTULIS PERFORMA RIDER
         function renderPerformanceTable() {
             let tbody = document.getElementById('performanceTableBody');
             if (!tbody) return;
@@ -1288,7 +1345,6 @@
                     db.ref('paket_input/' + resiUpper + '/status').set('PENDING');
                 }
             } else {
-                // Jika resi belum pernah di-input admin, simpan secara otomatis
                 let newTemp = {
                     date: new Date().toISOString().split('T')[0],
                     resi: resiUpper,
@@ -1316,8 +1372,73 @@
             }
         }
 
-        function updatePaketStatus(resi, newStatus) {
-            if (db) db.ref('paket_input/' + resi + '/status').set(newStatus);
+        // BUKA MODAL VERIFIKASI BUKTI FOTO (POD)
+        function openPodVerificationModal(resi, tipe) {
+            document.getElementById('podResiTarget').value = resi;
+            document.getElementById('podTipeTarget').value = tipe;
+
+            // Reset input file
+            document.getElementById('podFoto1').value = '';
+            document.getElementById('podFoto2').value = '';
+            document.getElementById('podFoto3').value = '';
+            document.getElementById('podFoto4').value = '';
+            document.getElementById('podVideo').value = '';
+
+            let containerF4 = document.getElementById('containerFoto4');
+            let containerVid = document.getElementById('containerVideo');
+
+            if (tipe === 'COD') {
+                containerF4.style.display = 'block';
+                containerVid.style.display = 'none';
+            } else if (tipe === 'COD CEK DULU') {
+                containerF4.style.display = 'block';
+                containerVid.style.display = 'block';
+            } else {
+                containerF4.style.display = 'none';
+                containerVid.style.display = 'none';
+            }
+
+            document.getElementById('podModal').style.display = 'flex';
+        }
+
+        function closePodModal() {
+            document.getElementById('podModal').style.display = 'none';
+        }
+
+        // VALIDASI INPUT MINIMAL BUKTI FOTO/VIDEO UNTUK POD
+        function submitPodVerification() {
+            let resi = document.getElementById('podResiTarget').value;
+            let tipe = document.getElementById('podTipeTarget').value;
+
+            let f1 = document.getElementById('podFoto1').files.length;
+            let f2 = document.getElementById('podFoto2').files.length;
+            let f3 = document.getElementById('podFoto3').files.length;
+            let f4 = document.getElementById('podFoto4').files.length;
+            let vid = document.getElementById('podVideo').files.length;
+
+            // Validasi 3 Foto Utama
+            if (f1 === 0 || f2 === 0 || f3 === 0) {
+                alert("⚠️ GAGAL TERKIRIM!\n\nAnda WAJIB melampirkan minimal 3 Foto Utama:\n- Foto 1: Resi\n- Foto 2: Paket Pegang Menghadap Rumah\n- Foto 3: Paket di Penerima / Tempat Paket");
+                return;
+            }
+
+            // Validasi Foto 4 (COD)
+            if ((tipe === 'COD' || tipe === 'COD CEK DULU') && f4 === 0) {
+                alert("⚠️ GAGAL TERKIRIM!\n\nUntuk Paket COD, Anda WAJIB melampirkan Foto 4 (Foto Uang / Bukti Transfer COD)!");
+                return;
+            }
+
+            // Validasi Video (COD CEK DULU)
+            if (tipe === 'COD CEK DULU' && vid === 0) {
+                alert("⚠️ GAGAL TERKIRIM!\n\nUntuk Paket COD CEK DULU, Anda WAJIB melampirkan Bukti Video Unboxing/Pemeriksaan!");
+                return;
+            }
+
+            // Update status ke Firebase jika lolos verifikasi
+            if (db) db.ref('paket_input/' + resi + '/status').set('DELIVERED');
+
+            alert("✅ STATUS DIPERBARUI!\n\nBukti foto berhasil diverifikasi. Paket resi " + resi + " telah ditandai TERKIRIM.");
+            closePodModal();
         }
 
         function removeRiderItem(resi) {
@@ -1359,7 +1480,6 @@
             let isAdmin = isAdminLoggedIn();
             let totalCod = 0;
 
-            // Atur header tabel secara dinamis (tambah kolom "Kurir / Rider" untuk Admin / Opsi ALL_ADMIN)
             let isShowAllMode = (selectedRider === 'ALL_ADMIN') || (isAdmin && !selectedRider);
 
             if (isShowAllMode) {
@@ -1396,10 +1516,8 @@
                 return;
             }
 
-            // Filter data paket
             let filteredList = [];
             if (isShowAllMode) {
-                // Tampilkan semua paket yang memiliki assignedRider
                 filteredList = inputPaketList.filter(function(pkg) {
                     return pkg.assignedRider && pkg.assignedRider.trim() !== '';
                 });
@@ -1430,7 +1548,7 @@
                 let isDelivered = item.status === 'DELIVERED';
                 let statusBtnHtml = isDelivered ? 
                     '<span class="badge badge-reg">✅ TERKIRIM</span>' : 
-                    '<button class="btn-action btn-wa" onclick="updatePaketStatus(\'' + item.resi + '\', \'DELIVERED\')">✔️ Tandai Terkirim</button>';
+                    '<button class="btn-action btn-wa" onclick="openPodVerificationModal(\'' + item.resi + '\', \'' + item.tipe + '\')">✔️ Tandai Terkirim</button>';
 
                 let riderCell = isShowAllMode ? '<td><span class="badge-rider">🛵 ' + item.assignedRider + '</span></td>' : '';
 
