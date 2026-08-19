@@ -431,8 +431,8 @@
         .btn-delete { background-color: #dc3545; color: white; margin-right: 4px; }
         .btn-wa { background-color: #25D366; color: white; margin-right: 4px; }
         .btn-phone { background-color: #007bff; color: white; }
-        .btn-reset-status { background-color: #17a2b8; color: white; cursor: pointer; }
-        .btn-reset-status:hover { background-color: #138496; }
+        .btn-reset-status { background-color: #dc3545; color: white; cursor: pointer; }
+        .btn-view-pod { background-color: #6f42c1; color: white; cursor: pointer; }
 
         .tab-content { display: none; }
         .tab-content.active { display: block; }
@@ -487,6 +487,36 @@
             font-weight: bold;
             display: block;
             margin-bottom: 4px;
+            color: var(--secondary);
+        }
+
+        .gallery-preview-container {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
+            gap: 10px;
+            margin-top: 15px;
+        }
+
+        .gallery-card {
+            background: #f8f9fa;
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            padding: 6px;
+            text-align: center;
+        }
+
+        .gallery-card img, .gallery-card video {
+            width: 100%;
+            height: 120px;
+            object-fit: cover;
+            border-radius: 4px;
+        }
+
+        .gallery-card span {
+            font-size: 0.72rem;
+            font-weight: bold;
+            display: block;
+            margin-top: 4px;
             color: var(--secondary);
         }
 
@@ -969,7 +999,7 @@
         </div>
     </div>
 
-    <!-- MODAL FORM PROOF OF DELIVERY (POD) - MENGGUNAKAN CAPTURE ENVIRONMENT (LANGSUNG KAMERA HP) -->
+    <!-- MODAL FORM PROOF OF DELIVERY (POD) -->
     <div id="podModal" class="modal-overlay">
         <div class="modal-box">
             <h3>📸 Bukti Pengiriman Paket (POD)</h3>
@@ -1006,6 +1036,22 @@
             <div style="display: flex; gap: 10px; margin-top: 15px;">
                 <button class="btn btn-secondary" style="flex: 1;" onclick="closePodModal()">Batal</button>
                 <button class="btn" style="flex: 1; background-color: var(--success);" onclick="submitPodVerification()">✔️ Konfirmasi Terkirim</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL PREVIEW GALERI POD UNTUK ADMIN -->
+    <div id="viewPodModal" class="modal-overlay">
+        <div class="modal-box" style="max-width: 550px;">
+            <h3>🔍 Preview Bukti Foto / Video (POD)</h3>
+            <p id="viewPodTitle">Menampilkan lampiran bukti dari Rider</p>
+
+            <div id="galleryPreviewList" class="gallery-preview-container">
+                <!-- Foto/Video akan dimuat secara dinamis -->
+            </div>
+
+            <div style="display: flex; gap: 10px; margin-top: 20px;">
+                <button class="btn btn-secondary" style="flex: 1;" onclick="closeViewPodModal()">Tutup</button>
             </div>
         </div>
     </div>
@@ -1385,7 +1431,6 @@
             document.getElementById('podResiTarget').value = resi;
             document.getElementById('podTipeTarget').value = tipe || 'REGULER';
 
-            // Reset input file
             document.getElementById('podFoto1').value = '';
             document.getElementById('podFoto2').value = '';
             document.getElementById('podFoto3').value = '';
@@ -1413,48 +1458,102 @@
             document.getElementById('podModal').style.display = 'none';
         }
 
-        // FITUR KHUSUS ADMIN: RESET STATUS TERKIRIM KEMBALI KE PENDING
+        // BUKA MODAL PREVIEW BUKTI FOTO / VIDEO (KHUSUS ADMIN)
+        function viewPodModalByElem(elem) {
+            let resi = elem.getAttribute('data-resi');
+            let pkg = inputPaketList.find(function(p) { return p.resi === resi; });
+            if (!pkg || !pkg.podData) return;
+
+            document.getElementById('viewPodTitle').innerText = "Resi " + resi + " (" + (pkg.assignedRider || 'Rider') + ")";
+            let container = document.getElementById('galleryPreviewList');
+            container.innerHTML = '';
+
+            let pod = pkg.podData;
+            if (pod.f1) container.innerHTML += '<div class="gallery-card"><a href="' + pod.f1 + '" target="_blank"><img src="' + pod.f1 + '"></a><span>Foto 1: Resi</span></div>';
+            if (pod.f2) container.innerHTML += '<div class="gallery-card"><a href="' + pod.f2 + '" target="_blank"><img src="' + pod.f2 + '"></a><span>Foto 2: Rumah</span></div>';
+            if (pod.f3) container.innerHTML += '<div class="gallery-card"><a href="' + pod.f3 + '" target="_blank"><img src="' + pod.f3 + '"></a><span>Foto 3: Tempat</span></div>';
+            if (pod.f4) container.innerHTML += '<div class="gallery-card"><a href="' + pod.f4 + '" target="_blank"><img src="' + pod.f4 + '"></a><span>Foto 4: Uang COD</span></div>';
+            if (pod.video) container.innerHTML += '<div class="gallery-card"><video src="' + pod.video + '" controls></video><span>Video Bukti</span></div>';
+
+            document.getElementById('viewPodModal').style.display = 'flex';
+        }
+
+        function closeViewPodModal() {
+            document.getElementById('viewPodModal').style.display = 'none';
+        }
+
+        // RESET STATUS TERKIRIM KEMBALI KE PENDING (ADMIN ONLY)
         function resetStatusToPending(elem) {
             let resi = elem.getAttribute('data-resi');
             if (!resi) return;
 
-            if (confirm("⚠️ KONFIRMASI ADMIN:\n\nApakah Anda ingin mengembalikan status paket " + resi + " dari TERKIRIM menjadi BELUM TERKIRIM (PENDING)?\n\n(Lakukan ini jika bukti foto dari kurir tidak jelas/salah).")) {
-                if (db) db.ref('paket_input/' + resi + '/status').set('PENDING');
+            if (confirm("⚠️ KONFIRMASI ADMIN:\n\nApakah Anda ingin mengembalikan status paket " + resi + " dari TERKIRIM menjadi PENDING?\n\n(Lakukan ini jika bukti foto dari kurir tidak jelas/salah).")) {
+                if (db) {
+                    db.ref('paket_input/' + resi + '/status').set('PENDING');
+                    db.ref('paket_input/' + resi + '/podData').remove();
+                }
                 alert("🔄 Status paket " + resi + " berhasil dikembalikan ke PENDING.");
             }
         }
 
-        // VALIDASI INPUT MINIMAL BUKTI FOTO/VIDEO UNTUK POD
-        function submitPodVerification() {
+        // READ FILE INPUT AS BASE64 DATA URL
+        function readFileAsDataUrl(fileInput) {
+            return new Promise(function(resolve) {
+                if (!fileInput || !fileInput.files || fileInput.files.length === 0) {
+                    resolve(null);
+                    return;
+                }
+                let reader = new FileReader();
+                reader.onload = function(e) { resolve(e.target.result); };
+                reader.readAsDataURL(fileInput.files[0]);
+            });
+        }
+
+        // VALIDASI DAN UPLOAD BUKTI FOTO (POD)
+        async function submitPodVerification() {
             let resi = document.getElementById('podResiTarget').value;
             let tipe = document.getElementById('podTipeTarget').value;
 
-            let f1 = document.getElementById('podFoto1').files.length;
-            let f2 = document.getElementById('podFoto2').files.length;
-            let f3 = document.getElementById('podFoto3').files.length;
-            let f4 = document.getElementById('podFoto4').files.length;
-            let vid = document.getElementById('podVideo').files.length;
+            let file1 = document.getElementById('podFoto1');
+            let file2 = document.getElementById('podFoto2');
+            let file3 = document.getElementById('podFoto3');
+            let file4 = document.getElementById('podFoto4');
+            let fileVid = document.getElementById('podVideo');
 
-            // Validasi 3 Foto Utama
-            if (f1 === 0 || f2 === 0 || f3 === 0) {
+            if (file1.files.length === 0 || file2.files.length === 0 || file3.files.length === 0) {
                 alert("⚠️ GAGAL TERKIRIM!\n\nAnda WAJIB melampirkan minimal 3 Foto Utama:\n- Foto 1: Resi\n- Foto 2: Paket Pegang Menghadap Rumah\n- Foto 3: Paket di Penerima / Tempat Paket");
                 return;
             }
 
-            // Validasi Foto 4 (COD)
-            if ((tipe === 'COD' || tipe === 'COD CEK DULU') && f4 === 0) {
+            if ((tipe === 'COD' || tipe === 'COD CEK DULU') && file4.files.length === 0) {
                 alert("⚠️ GAGAL TERKIRIM!\n\nUntuk Paket COD, Anda WAJIB melampirkan Foto 4 (Foto Uang / Bukti Transfer COD)!");
                 return;
             }
 
-            // Validasi Video (COD CEK DULU)
-            if (tipe === 'COD CEK DULU' && vid === 0) {
+            if (tipe === 'COD CEK DULU' && fileVid.files.length === 0) {
                 alert("⚠️ GAGAL TERKIRIM!\n\nUntuk Paket COD CEK DULU, Anda WAJIB melampirkan Bukti Video Unboxing/Pemeriksaan!");
                 return;
             }
 
-            // Update status ke Firebase jika lolos verifikasi
-            if (db) db.ref('paket_input/' + resi + '/status').set('DELIVERED');
+            let f1Data = await readFileAsDataUrl(file1);
+            let f2Data = await readFileAsDataUrl(file2);
+            let f3Data = await readFileAsDataUrl(file3);
+            let f4Data = await readFileAsDataUrl(file4);
+            let vidData = await readFileAsDataUrl(fileVid);
+
+            let podDataObj = {
+                f1: f1Data,
+                f2: f2Data,
+                f3: f3Data,
+                f4: f4Data,
+                video: vidData,
+                uploadedAt: Date.now()
+            };
+
+            if (db) {
+                db.ref('paket_input/' + resi + '/status').set('DELIVERED');
+                db.ref('paket_input/' + resi + '/podData').set(podDataObj);
+            }
 
             alert("✅ STATUS DIPERBARUI!\n\nBukti foto berhasil diverifikasi. Paket resi " + resi + " telah ditandai TERKIRIM.");
             closePodModal();
@@ -1465,6 +1564,7 @@
                 if (db) {
                     db.ref('paket_input/' + resi + '/assignedRider').remove();
                     db.ref('paket_input/' + resi + '/status').remove();
+                    db.ref('paket_input/' + resi + '/podData').remove();
                 }
             }
         }
@@ -1482,6 +1582,7 @@
                         if (db) {
                             db.ref('paket_input/' + pkg.resi + '/assignedRider').remove();
                             db.ref('paket_input/' + pkg.resi + '/status').remove();
+                            db.ref('paket_input/' + pkg.resi + '/podData').remove();
                         }
                     }
                 });
@@ -1568,10 +1669,11 @@
                 let statusBtnHtml = '';
 
                 if (isDelivered) {
+                    let viewPodBtn = item.podData ? '<button type="button" class="btn-action btn-view-pod" data-resi="' + item.resi + '" onclick="viewPodModalByElem(this)" style="margin-bottom: 4px;">🔍 Lihat Foto</button><br>' : '';
                     if (isAdmin) {
-                        statusBtnHtml = '<button type="button" class="btn-action btn-reset-status" data-resi="' + item.resi + '" onclick="resetStatusToPending(this)" title="Klik untuk mengembalikan ke status belum terkirim">✅ TERKIRIM (Reset 🔄)</button>';
+                        statusBtnHtml = viewPodBtn + '<button type="button" class="btn-action btn-reset-status" data-resi="' + item.resi + '" onclick="resetStatusToPending(this)">🔄 Reset Status</button>';
                     } else {
-                        statusBtnHtml = '<span class="badge badge-reg">✅ TERKIRIM</span>';
+                        statusBtnHtml = viewPodBtn + '<span class="badge badge-reg">✅ TERKIRIM</span>';
                     }
                 } else {
                     statusBtnHtml = '<button type="button" class="btn-action btn-wa" data-resi="' + item.resi + '" data-tipe="' + item.tipe + '" onclick="openPodVerificationModalByElem(this)">✔️ Tandai Terkirim</button>';
