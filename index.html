@@ -819,7 +819,7 @@
                 
                 <div class="form-group">
                     <label>Pilih Kurir Rider Motor Aktif</label>
-                    <select id="riderSelect" class="form-control">
+                    <select id="riderSelect" class="form-control" onchange="renderRiderManifestTable()">
                         <option value="">-- Pilih Rider --</option>
                     </select>
                 </div>
@@ -971,7 +971,6 @@
 
         let inputPaketList = [];
         let riderList = [];
-        let riderManifestList = [];
         let donutChart = null;
         let barChart = null;
         let editingResi = null;
@@ -995,12 +994,13 @@
             initCharts();
 
             if (db) {
-                // LISTEN DATA PAKET
+                // LISTEN DATA PAKET REALTIME
                 db.ref('paket_input').on('value', function(snapshot) {
                     const data = snapshot.val();
                     inputPaketList = data ? Object.values(data) : [];
                     renderInputPaketTable();
                     updateDashboardMetrics();
+                    renderRiderManifestTable();
                     renderPerformanceTable();
                 });
 
@@ -1165,7 +1165,6 @@
             riderList.forEach(function(r, index) {
                 let riderName = r.name;
                 
-                // Cari statistik paket rider dari paket_input
                 let totalAssigned = 0;
                 let deliveredCount = 0;
                 let codDeliveredAmount = 0;
@@ -1201,6 +1200,12 @@
 
         // FULL SCREEN CAMERA SCANNER FUNCTIONS
         function openCameraModal() {
+            let selectedRider = document.getElementById('riderSelect').value;
+            if (!selectedRider) {
+                alert("⚠️ Silakan PILIH RIDER terlebih dahulu sebelum membuka kamera scan!");
+                return;
+            }
+
             let modal = document.getElementById('cameraModal');
             modal.style.display = 'flex';
 
@@ -1237,14 +1242,12 @@
             let matchResi = resiUpper.match(/SPXID[A-Z0-9]+/i);
             if (matchResi) resiUpper = matchResi[0].toUpperCase();
 
-            // Masukkan resi ke kolom input manual
             let inputField = document.getElementById('riderManualScanInput');
             if (inputField) {
                 inputField.value = resiUpper;
                 inputField.focus();
             }
 
-            // Tutup kamera full screen
             closeCameraModal();
         }
 
@@ -1261,27 +1264,20 @@
             }
 
             let resiUpper = rawResi.trim().toUpperCase();
-
             let matchResi = resiUpper.match(/SPXID[A-Z0-9]+/i);
             if (matchResi) resiUpper = matchResi[0].toUpperCase();
-
-            if (riderManifestList.some(function(item) { return item.resi === resiUpper; })) {
-                alert("⚠️ Resi " + resiUpper + " sudah ada di list bawaan Rider!");
-                document.getElementById('riderManualScanInput').value = '';
-                return;
-            }
 
             let pkgData = inputPaketList.find(function(p) { return p.resi === resiUpper; });
 
             if (pkgData) {
-                pkgData.assignedRider = selectedRider;
-                if (!pkgData.status) pkgData.status = 'PENDING';
-                riderManifestList.push(pkgData);
-
-                // Update rider penanggung jawab di Firebase
-                if (db) db.ref('paket_input/' + resiUpper + '/assignedRider').set(selectedRider);
+                if (db) {
+                    db.ref('paket_input/' + resiUpper + '/assignedRider').set(selectedRider);
+                    db.ref('paket_input/' + resiUpper + '/status').set('PENDING');
+                }
             } else {
+                // Jika resi belum pernah di-input admin, simpan secara otomatis
                 let newTemp = {
+                    date: new Date().toISOString().split('T')[0],
                     resi: resiUpper,
                     receiver: "-",
                     phone: "-",
@@ -1291,13 +1287,13 @@
                     tipe: "REGULER",
                     nominalCod: 0,
                     assignedRider: selectedRider,
-                    status: 'PENDING'
+                    status: 'PENDING',
+                    timestamp: Date.now()
                 };
-                riderManifestList.push(newTemp);
+                if (db) db.ref('paket_input/' + resiUpper).set(newTemp);
             }
 
             playBeepSound();
-            renderRiderManifestTable();
             document.getElementById('riderManualScanInput').value = '';
         }
 
@@ -1308,41 +1304,65 @@
         }
 
         function updatePaketStatus(resi, newStatus) {
-            let item = riderManifestList.find(function(i) { return i.resi === resi; });
-            if (item) {
-                item.status = newStatus;
-                if (db) db.ref('paket_input/' + resi + '/status').set(newStatus);
-                renderRiderManifestTable();
-                renderPerformanceTable();
-            }
+            if (db) db.ref('paket_input/' + resi + '/status').set(newStatus);
         }
 
         function removeRiderItem(resi) {
-            riderManifestList = riderManifestList.filter(function(i) { return i.resi !== resi; });
-            renderRiderManifestTable();
+            if (confirm("Apakah Anda yakin ingin membatalkan paket ini dari bawaan rider?")) {
+                if (db) {
+                    db.ref('paket_input/' + resi + '/assignedRider').remove();
+                    db.ref('paket_input/' + resi + '/status').remove();
+                }
+            }
         }
 
         function clearRiderManifest() {
-            if (confirm("Apakah Anda yakin ingin membersihkan seluruh daftar barang bawaan rider ini?")) {
-                riderManifestList = [];
-                renderRiderManifestTable();
+            let selectedRider = document.getElementById('riderSelect').value;
+            if (!selectedRider) {
+                alert("Pilih rider terlebih dahulu!");
+                return;
+            }
+
+            if (confirm("Apakah Anda yakin ingin membersihkan seluruh daftar barang bawaan rider " + selectedRider + "?")) {
+                inputPaketList.forEach(function(pkg) {
+                    if (pkg.assignedRider === selectedRider) {
+                        if (db) {
+                            db.ref('paket_input/' + pkg.resi + '/assignedRider').remove();
+                            db.ref('paket_input/' + pkg.resi + '/status').remove();
+                        }
+                    }
+                });
             }
         }
 
         function renderRiderManifestTable() {
             let tbody = document.getElementById('riderManifestTableBody');
+            if (!tbody) return;
             tbody.innerHTML = '';
 
+            let selectedRider = document.getElementById('riderSelect').value;
             let totalCod = 0;
 
-            if (riderManifestList.length === 0) {
-                tbody.innerHTML = '<tr><td colspan="11" style="text-align: center; color: var(--text-muted);">Belum ada barang yang discan oleh Rider. Silakan scan resi terlebih dahulu.</td></tr>';
+            if (!selectedRider) {
+                tbody.innerHTML = '<tr><td colspan="11" style="text-align: center; color: var(--text-muted);">Silakan pilih Rider terlebih dahulu di atas.</td></tr>';
                 document.getElementById('riderTotalItems').innerText = '0 Paket';
                 document.getElementById('riderTotalCod').innerText = 'Rp 0';
                 return;
             }
 
-            riderManifestList.forEach(function(item, index) {
+            // Filter data langsung dari Firebase berdasarkan rider yang dipilih
+            let filteredList = inputPaketList.filter(function(pkg) {
+                return pkg.assignedRider === selectedRider;
+            });
+
+            if (filteredList.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="11" style="text-align: center; color: var(--text-muted);">Belum ada barang yang discan/dibawa oleh Rider ' + selectedRider + '.</td></tr>';
+                document.getElementById('riderTotalItems').innerText = '0 Paket';
+                document.getElementById('riderTotalCod').innerText = 'Rp 0';
+                return;
+            }
+
+            filteredList.forEach(function(item, index) {
                 totalCod += (item.nominalCod || 0);
                 let badgeClass = item.tipe === 'REGULER' ? 'badge-reg' : (item.tipe === 'COD' ? 'badge-cod' : 'badge-cek');
 
@@ -1361,9 +1381,9 @@
                     '<td><strong>' + item.resi + '</strong></td>' +
                     '<td>' + (item.receiver || '-') + '</td>' +
                     '<td style="white-space: nowrap;">' + contactDisplay + '</td>' +
-                    '<td>' + item.detailAddr + '</td>' +
-                    '<td><span class="badge-patokan">' + item.patokan + '</span></td>' +
-                    '<td>Desa ' + item.desa + '</td>' +
+                    '<td>' + (item.detailAddr || '-') + '</td>' +
+                    '<td><span class="badge-patokan">' + (item.patokan || '-') + '</span></td>' +
+                    '<td>Desa ' + (item.desa || 'Umum') + '</td>' +
                     '<td><span class="badge ' + badgeClass + '">' + item.tipe + '</span></td>' +
                     '<td>Rp ' + (item.nominalCod || 0).toLocaleString() + '</td>' +
                     '<td style="text-align: center;">' + statusBtnHtml + '</td>' +
@@ -1371,7 +1391,7 @@
                     '</tr>';
             });
 
-            document.getElementById('riderTotalItems').innerText = riderManifestList.length + ' Paket';
+            document.getElementById('riderTotalItems').innerText = filteredList.length + ' Paket';
             document.getElementById('riderTotalCod').innerText = 'Rp ' + totalCod.toLocaleString();
         }
 
@@ -1390,7 +1410,6 @@
         }
 
         function switchTab(tabId, btnElement) {
-            // RESTRIKSI AKSES ADMIN UNTUK TAB DASHBOARD, DAFTAR RIDER, DAN INPUT PAKET
             if ((tabId === 'dashTab' || tabId === 'riderTab' || tabId === 'inputTab') && !isAdminLoggedIn()) {
                 pendingTabTarget = tabId;
                 pendingBtnElement = btnElement;
