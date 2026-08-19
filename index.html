@@ -1574,7 +1574,22 @@
             });
         }
 
-        // VALIDASI DAN UPLOAD BUKTI FOTO (POD)
+        // HELPER FUNGSI MENGUNDUH FOTO OTOMATIS KE HP RIDER
+        function downloadBase64Media(base64Data, filename) {
+            if (!base64Data) return;
+            try {
+                let link = document.createElement('a');
+                link.href = base64Data;
+                link.download = filename;
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+            } catch (e) {
+                console.log("Download failed", e);
+            }
+        }
+
+        // VALIDASI, UPLOAD BUKTI FOTO (POD), DAN SIMPAN POTO KE HP
         async function submitPodVerification() {
             let resi = document.getElementById('podResiTarget').value;
             let tipe = document.getElementById('podTipeTarget').value;
@@ -1606,6 +1621,12 @@
             let f4Data = await readFileAsDataUrl(file4);
             let vidData = await readFileAsDataUrl(fileVid);
 
+            // OTOMATIS UNDUH KE HP RIDER
+            if (f1Data) downloadBase64Media(f1Data, "POD_" + resi + "_Foto1.jpg");
+            if (f2Data) downloadBase64Media(f2Data, "POD_" + resi + "_Foto2.jpg");
+            if (f3Data) downloadBase64Media(f3Data, "POD_" + resi + "_Foto3.jpg");
+            if (f4Data) downloadBase64Media(f4Data, "POD_" + resi + "_Foto4.jpg");
+
             let podDataObj = {
                 f1: f1Data,
                 f2: f2Data,
@@ -1620,7 +1641,7 @@
                 db.ref('paket_input/' + resi + '/podData').set(podDataObj);
             }
 
-            alert("✅ STATUS DIPERBARUI!\n\nBukti foto berhasil diverifikasi. Paket resi " + resi + " telah ditandai TERKIRIM.");
+            alert("✅ STATUS DIPERBARUI & FOTO DISIMPAN!\n\nFoto bukti berhasil di-upload ke sistem dan otomatis tersimpan di folder Download/Galeri HP Anda.");
             closePodModal();
         }
 
