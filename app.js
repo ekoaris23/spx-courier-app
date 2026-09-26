@@ -4,8 +4,10 @@ let currentRole = null;
 let chartInstance = null;
 let allDeliveries = [];
 
-// Set Tanggal Hari Ini secara otomatis
-document.getElementById("entry-date").valueAsDate = new Date();
+// Set Tanggal Input Hari Ini
+const todayStr = new Date().toISOString().split('T')[0];
+document.getElementById("entry-date").value = todayStr;
+document.getElementById("filter-start-date").value = todayStr;
 
 // Handling Login
 document.getElementById("login-form").addEventListener("submit", (e) => {
@@ -77,19 +79,16 @@ function listenCouriers() {
     keys.forEach((key) => {
       const name = couriersObj[key].name;
 
-      // Select Option
       const opt = document.createElement("option");
       opt.value = name;
       opt.innerText = name;
       courierSelect.appendChild(opt);
 
-      // Filter Option
       const optFilter = document.createElement("option");
       optFilter.value = name;
       optFilter.innerText = name;
       courierFilter.appendChild(optFilter);
 
-      // List Hapus
       const li = document.createElement("li");
       li.className = "flex justify-between items-center bg-white p-2 rounded border";
       li.innerHTML = `
@@ -101,7 +100,7 @@ function listenCouriers() {
   });
 }
 
-// TAMBAH KURIR BARU
+// TAMBAH KURIR
 document.getElementById("add-courier-form").addEventListener("submit", (e) => {
   e.preventDefault();
   const nameInput = document.getElementById("courier-name-input");
@@ -135,7 +134,6 @@ document.getElementById("entry-form").addEventListener("submit", (e) => {
     return;
   }
 
-  // Hitung Tarif Hak Kurir per Paket
   let courierRate = 2500;
   if (type === "JAUH") courierRate = 2800;
   if (type === "BIG") courierRate = 3000;
@@ -172,14 +170,23 @@ function listenRealtimeData() {
   });
 }
 
-// FILTER KURIR
-document.getElementById("filter-courier-history").addEventListener("change", () => {
+// EVENT LISTENERS UNTUK FILTER TANGGAL DAN KURIR
+document.getElementById("filter-start-date").addEventListener("change", renderTablesAndCharts);
+document.getElementById("filter-end-date").addEventListener("change", renderTablesAndCharts);
+document.getElementById("filter-courier-history").addEventListener("change", renderTablesAndCharts);
+
+document.getElementById("reset-date-btn").addEventListener("click", () => {
+  document.getElementById("filter-start-date").value = todayStr;
+  document.getElementById("filter-end-date").value = "";
   renderTablesAndCharts();
 });
 
-// RENDER REKAPITULASI & RIWAYAT
+// LOGIKA RENDER REKAP DENGAN FILTER RENTANG TANGGAL
 function renderTablesAndCharts() {
-  const filterVal = document.getElementById("filter-courier-history").value;
+  const startDate = document.getElementById("filter-start-date").value;
+  const endDate = document.getElementById("filter-end-date").value;
+  const filterCourier = document.getElementById("filter-courier-history").value;
+
   const summaryBody = document.getElementById("summary-table-body");
   const recapBody = document.getElementById("recap-table-body");
 
@@ -191,12 +198,24 @@ function renderTablesAndCharts() {
   let globalTotalCod = 0;
   let globalTotalCourierPay = 0;
 
-  allDeliveries.forEach((item) => {
+  // Saring data berdasarkan Tanggal
+  const filteredDeliveries = allDeliveries.filter((item) => {
+    if (startDate && endDate) {
+      return item.date >= startDate && item.date <= endDate;
+    } else if (startDate) {
+      return item.date === startDate;
+    } else if (endDate) {
+      return item.date <= endDate;
+    }
+    return true;
+  });
+
+  filteredDeliveries.forEach((item) => {
     globalTotalPkg++;
     globalTotalCod += item.codAmount;
     globalTotalCourierPay += item.courierRate;
 
-    // Agregasi Per Kurir untuk Tabel Ringkasan
+    // Agregasi Ringkasan Per Kurir
     if (!courierStats[item.courier]) {
       courierStats[item.courier] = { totalPkg: 0, totalCod: 0, totalPay: 0 };
     }
@@ -204,8 +223,8 @@ function renderTablesAndCharts() {
     courierStats[item.courier].totalCod += item.codAmount;
     courierStats[item.courier].totalPay += item.courierRate;
 
-    // Render Tabel Detail (Di-filter jika memilih kurir tertentu)
-    if (filterVal === "ALL" || item.courier === filterVal) {
+    // Detail Per Resi
+    if (filterCourier === "ALL" || item.courier === filterCourier) {
       const tr = document.createElement("tr");
       tr.className = "border-b text-xs";
       tr.innerHTML = `
@@ -223,7 +242,7 @@ function renderTablesAndCharts() {
     }
   });
 
-  // Render Tabel Ringkasan (Seperti Sheet Kiri Spreadsheet)
+  // Render Tabel Ringkasan
   Object.keys(courierStats).forEach((courierName) => {
     const stat = courierStats[courierName];
     const tr = document.createElement("tr");
@@ -262,7 +281,7 @@ window.deleteEntry = (id) => {
   }
 };
 
-// RENDER CHART PER KURIR
+// RENDER CHART
 function renderChart(courierStats) {
   const labels = Object.keys(courierStats);
   const dataPkg = labels.map(l => courierStats[l].totalPkg);
