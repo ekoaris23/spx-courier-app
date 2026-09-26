@@ -9,7 +9,6 @@ document.getElementById("login-form").addEventListener("submit", (e) => {
   const role = document.getElementById("login-role").value;
   const pass = document.getElementById("login-password").value;
 
-  // Password sederhana berdasarkan role
   let valid = false;
   if (role === "admin" && pass === "admin123") valid = true;
   if (role === "assistant" && pass === "asisten123") valid = true;
@@ -19,16 +18,28 @@ document.getElementById("login-form").addEventListener("submit", (e) => {
     currentRole = role;
     document.getElementById("user-role-badge").innerText = `Role: ${role.toUpperCase()}`;
     
-    // Sembunyikan/Tampilkan Profit Owner hanya jika Login sebagai Admin/Owner
+    // --- KONTROL HAK AKSES TAMPILAN KARTU METRIK ---
+    const assistantCard = document.getElementById("assistant-card-fee");
+    const adminCard = document.getElementById("admin-card-profit");
+
     if (currentRole === 'admin') {
-      document.getElementById("admin-card-profit").classList.remove("hidden");
+      // Admin: Lihat Semua Kartu
+      assistantCard.classList.remove("hidden");
+      adminCard.classList.remove("hidden");
+    } else if (currentRole === 'assistant') {
+      // Asisten: Lihat Omset Leader + Komisi Asisten (Profit Owner Sembunyi)
+      assistantCard.classList.remove("hidden");
+      adminCard.classList.add("hidden");
     } else {
-      document.getElementById("admin-card-profit").classList.add("hidden");
+      // Leader: Hanya Lihat Omset Leader (Komisi Asisten & Profit Owner Sembunyi)
+      assistantCard.classList.add("hidden");
+      adminCard.classList.add("hidden");
     }
 
     document.getElementById("login-section").classList.add("hidden");
     document.getElementById("app-section").classList.remove("hidden");
     
+    listenCouriers();
     listenRealtimeData();
   } else {
     alert("Password salah untuk role yang dipilih!");
@@ -42,7 +53,68 @@ document.getElementById("logout-btn").addEventListener("click", () => {
   document.getElementById("app-section").classList.add("hidden");
 });
 
-// Form Input Pengiriman
+// LISTEN & RENDERING DAFTAR KURIR
+function listenCouriers() {
+  db.ref("couriers").on("value", (snapshot) => {
+    const couriersObj = snapshot.val() || {};
+    const courierSelect = document.getElementById("entry-courier");
+    const courierList = document.getElementById("courier-list");
+
+    courierSelect.innerHTML = "";
+    courierList.innerHTML = "";
+
+    const keys = Object.keys(couriersObj);
+
+    if (keys.length === 0) {
+      courierSelect.innerHTML = `<option value="">-- Belum Ada Kurir --</option>`;
+      courierList.innerHTML = `<li class="text-gray-400 text-xs italic">Belum ada kurir ditambahkan</li>`;
+      return;
+    }
+
+    keys.forEach((key) => {
+      const name = couriersObj[key].name;
+
+      // Isi Dropdown Options
+      const opt = document.createElement("option");
+      opt.value = name;
+      opt.innerText = name;
+      courierSelect.appendChild(opt);
+
+      // Isi List Hapus Kurir
+      const li = document.createElement("li");
+      li.className = "flex justify-between items-center bg-white p-2 rounded border";
+      li.innerHTML = `
+        <span>${name}</span>
+        <button onclick="window.deleteCourier('${key}')" class="text-red-500 hover:text-red-700 font-bold text-xs bg-red-50 px-2 py-1 rounded">Hapus</button>
+      `;
+      courierList.appendChild(li);
+    });
+  });
+}
+
+// TAMBAH KURIR BARU
+document.getElementById("add-courier-form").addEventListener("submit", (e) => {
+  e.preventDefault();
+  const nameInput = document.getElementById("courier-name-input");
+  const name = nameInput.value.trim();
+
+  if (name) {
+    db.ref("couriers").push({ name })
+      .then(() => {
+        nameInput.value = "";
+      })
+      .catch((err) => alert("Gagal menambah kurir: " + err.message));
+  }
+});
+
+// HAPUS KURIR
+window.deleteCourier = (key) => {
+  if (confirm("Yakin ingin menghapus kurir ini dari daftar?")) {
+    db.ref("couriers/" + key).remove();
+  }
+};
+
+// FORM INPUT PENGIRIMAN
 document.getElementById("entry-form").addEventListener("submit", (e) => {
   e.preventDefault();
   const date = document.getElementById("entry-date").value;
@@ -50,6 +122,11 @@ document.getElementById("entry-form").addEventListener("submit", (e) => {
   const standard = parseInt(document.getElementById("pkg-standard").value) || 0;
   const far = parseInt(document.getElementById("pkg-far").value) || 0;
   const heavy = parseInt(document.getElementById("pkg-heavy").value) || 0;
+
+  if (!courier) {
+    alert("Silakan pilih kurir terlebih dahulu!");
+    return;
+  }
 
   const newRef = db.ref("deliveries").push();
   newRef.set({
@@ -69,7 +146,7 @@ document.getElementById("entry-form").addEventListener("submit", (e) => {
   });
 });
 
-// Mendengarkan Perubahan Data secara Realtime dari Firebase Realtime Database
+// REALTIME REKAP PENGIRIMAN
 function listenRealtimeData() {
   db.ref("deliveries").on("value", (snapshot) => {
     const dataObj = snapshot.val() || {};
@@ -85,14 +162,11 @@ function listenRealtimeData() {
     })).sort((a, b) => new Date(b.date) - new Date(a.date));
 
     items.forEach((item) => {
-      // Hitung Hak Kurir
       const courierPay = (item.standard * 2500) + (item.far * 2800) + (item.heavy * 3000);
       totalPkgSum += item.totalPkg;
 
-      // Agregasi Data Chart per Tanggal
       chartData[item.date] = (chartData[item.date] || 0) + item.totalPkg;
 
-      // Render Baris Tabel
       const tr = document.createElement("tr");
       tr.className = "border-b text-xs";
       tr.innerHTML = `
@@ -107,32 +181,28 @@ function listenRealtimeData() {
       tableBody.appendChild(tr);
     });
 
-    // Perhitungan Komisi
     const leaderOmset = totalPkgSum * 4000;
     const assistantFee = leaderOmset * 0.01;
+    const ownerProfit = totalPkgSum * 1300;
 
+    // Isikan nilai sesuai perhitungan
     document.getElementById("metric-total-pkg").innerText = totalPkgSum.toLocaleString("id-ID");
     document.getElementById("metric-leader-omset").innerText = `Rp ${leaderOmset.toLocaleString("id-ID")}`;
     document.getElementById("metric-assistant-fee").innerText = `Rp ${assistantFee.toLocaleString("id-ID")}`;
-
-    // Hanya Owner/Admin yang bisa melihat margin Rp 1.300
-    if (currentRole === 'admin') {
-      const ownerProfit = totalPkgSum * 1300;
-      document.getElementById("metric-owner-profit").innerText = `Rp ${ownerProfit.toLocaleString("id-ID")}`;
-    }
+    document.getElementById("metric-owner-profit").innerText = `Rp ${ownerProfit.toLocaleString("id-ID")}`;
 
     renderChart(chartData);
   });
 }
 
-// Fungsi Hapus Item
+// HAPUS RIWAYAT PENGIRIMAN
 window.deleteEntry = (id) => {
   if (confirm("Apakah Anda yakin ingin menghapus data rekap ini?")) {
     db.ref("deliveries/" + id).remove();
   }
 };
 
-// Render Grafik Analisis Paket
+// RENDER CHART
 function renderChart(chartData) {
   const dates = Object.keys(chartData).reverse();
   const totals = dates.map(d => chartData[d]);
