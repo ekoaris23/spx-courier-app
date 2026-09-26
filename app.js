@@ -1,5 +1,3 @@
-// ... [Kode bagian atas tetap sama] ...
-
 function renderTablesAndCharts() {
   const startDate = document.getElementById("filter-start-date").value;
   const endDate = document.getElementById("filter-end-date").value;
@@ -16,6 +14,7 @@ function renderTablesAndCharts() {
   let globalTotalCod = 0;
   let globalTotalCourierPay = 0;
 
+  // Filter tanggal
   const filteredDeliveries = allDeliveries.filter((item) => {
     if (startDate && endDate) {
       return item.date >= startDate && item.date <= endDate;
@@ -57,6 +56,7 @@ function renderTablesAndCharts() {
     }
   });
 
+  // Render Tabel Ringkasan
   Object.keys(courierStats).forEach((courierName) => {
     const stat = courierStats[courierName];
     const tr = document.createElement("tr");
@@ -75,17 +75,18 @@ function renderTablesAndCharts() {
   document.getElementById("summary-total-pay").innerText = `Rp ${globalTotalCourierPay.toLocaleString("id-ID")}`;
 
   // KETIGA PERHITUNGAN UTAMA
-  const leaderOmset = globalTotalPkg * 4000;
-  const assistantFee = leaderOmset * 0.01;
-  const ownerProfit = globalTotalPkg * 1300;
+  const leaderOmset = globalTotalPkg * 4000;                      // 80 x 4000 = Rp 320.000
+  const assistantFee = leaderOmset * 0.01;                        // 1% x 320.000 = Rp 3.200
+  const leaderNetProfit = leaderOmset - globalTotalCourierPay - assistantFee; // 320.000 - 210.500 - 3.200 = Rp 106.300
+  const ownerProfit = globalTotalPkg * 1300;                      // 80 x 1300 = Rp 104.000
 
+  // PENGISIAN NILAI KE KARTU METRIK
   document.getElementById("metric-total-pkg").innerText = globalTotalPkg;
   document.getElementById("metric-leader-omset").innerText = `Rp ${leaderOmset.toLocaleString("id-ID")}`;
+  document.getElementById("metric-leader-profit").innerText = `Rp ${leaderNetProfit.toLocaleString("id-ID")}`;
   document.getElementById("metric-total-cod").innerText = `Rp ${globalTotalCod.toLocaleString("id-ID")}`;
   document.getElementById("metric-assistant-fee").innerText = `Rp ${assistantFee.toLocaleString("id-ID")}`;
   document.getElementById("metric-owner-profit").innerText = `Rp ${ownerProfit.toLocaleString("id-ID")}`;
 
   renderChart(courierStats);
 }
-
-// ... [Kode sisanya tetap sama] ...
