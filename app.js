@@ -2,6 +2,10 @@ import { db } from "./firebase-config.js";
 
 let currentRole = null;
 let chartInstance = null;
+let allDeliveries = [];
+
+// Set Tanggal Hari Ini secara otomatis
+document.getElementById("entry-date").valueAsDate = new Date();
 
 // Handling Login
 document.getElementById("login-form").addEventListener("submit", (e) => {
@@ -18,20 +22,17 @@ document.getElementById("login-form").addEventListener("submit", (e) => {
     currentRole = role;
     document.getElementById("user-role-badge").innerText = `Role: ${role.toUpperCase()}`;
     
-    // --- KONTROL HAK AKSES TAMPILAN KARTU METRIK ---
+    // Hak Akses Tampilan Kartu Metrik
     const assistantCard = document.getElementById("assistant-card-fee");
     const adminCard = document.getElementById("admin-card-profit");
 
     if (currentRole === 'admin') {
-      // Admin: Lihat Semua Kartu
       assistantCard.classList.remove("hidden");
       adminCard.classList.remove("hidden");
     } else if (currentRole === 'assistant') {
-      // Asisten: Lihat Omset Leader + Komisi Asisten (Profit Owner Sembunyi)
       assistantCard.classList.remove("hidden");
       adminCard.classList.add("hidden");
     } else {
-      // Leader: Hanya Lihat Omset Leader (Komisi Asisten & Profit Owner Sembunyi)
       assistantCard.classList.add("hidden");
       adminCard.classList.add("hidden");
     }
@@ -53,14 +54,16 @@ document.getElementById("logout-btn").addEventListener("click", () => {
   document.getElementById("app-section").classList.add("hidden");
 });
 
-// LISTEN & RENDERING DAFTAR KURIR
+// LISTEN DAFTAR KURIR
 function listenCouriers() {
   db.ref("couriers").on("value", (snapshot) => {
     const couriersObj = snapshot.val() || {};
     const courierSelect = document.getElementById("entry-courier");
+    const courierFilter = document.getElementById("filter-courier-history");
     const courierList = document.getElementById("courier-list");
 
     courierSelect.innerHTML = "";
+    courierFilter.innerHTML = `<option value="ALL">-- Semua Kurir --</option>`;
     courierList.innerHTML = "";
 
     const keys = Object.keys(couriersObj);
@@ -74,13 +77,19 @@ function listenCouriers() {
     keys.forEach((key) => {
       const name = couriersObj[key].name;
 
-      // Isi Dropdown Options
+      // Select Option
       const opt = document.createElement("option");
       opt.value = name;
       opt.innerText = name;
       courierSelect.appendChild(opt);
 
-      // Isi List Hapus Kurir
+      // Filter Option
+      const optFilter = document.createElement("option");
+      optFilter.value = name;
+      optFilter.innerText = name;
+      courierFilter.appendChild(optFilter);
+
+      // List Hapus
       const li = document.createElement("li");
       li.className = "flex justify-between items-center bg-white p-2 rounded border";
       li.innerHTML = `
@@ -100,112 +109,163 @@ document.getElementById("add-courier-form").addEventListener("submit", (e) => {
 
   if (name) {
     db.ref("couriers").push({ name })
-      .then(() => {
-        nameInput.value = "";
-      })
+      .then(() => nameInput.value = "")
       .catch((err) => alert("Gagal menambah kurir: " + err.message));
   }
 });
 
 // HAPUS KURIR
 window.deleteCourier = (key) => {
-  if (confirm("Yakin ingin menghapus kurir ini dari daftar?")) {
+  if (confirm("Yakin ingin menghapus kurir ini?")) {
     db.ref("couriers/" + key).remove();
   }
 };
 
-// FORM INPUT PENGIRIMAN
+// SIMPAN PAKET PER RESI (SPXID)
 document.getElementById("entry-form").addEventListener("submit", (e) => {
   e.preventDefault();
   const date = document.getElementById("entry-date").value;
   const courier = document.getElementById("entry-courier").value;
-  const standard = parseInt(document.getElementById("pkg-standard").value) || 0;
-  const far = parseInt(document.getElementById("pkg-far").value) || 0;
-  const heavy = parseInt(document.getElementById("pkg-heavy").value) || 0;
+  const spxid = document.getElementById("entry-spxid").value.trim().toUpperCase();
+  const type = document.getElementById("entry-type").value;
+  const codAmount = parseInt(document.getElementById("entry-cod").value) || 0;
 
   if (!courier) {
     alert("Silakan pilih kurir terlebih dahulu!");
     return;
   }
 
+  // Hitung Tarif Hak Kurir per Paket
+  let courierRate = 2500;
+  if (type === "JAUH") courierRate = 2800;
+  if (type === "BIG") courierRate = 3000;
+
   const newRef = db.ref("deliveries").push();
   newRef.set({
     date,
     courier,
-    standard,
-    far,
-    heavy,
-    totalPkg: standard + far + heavy,
+    spxid,
+    type,
+    codAmount,
+    courierRate,
     timestamp: Date.now()
   }).then(() => {
-    alert("Data rekap berhasil disimpan!");
-    document.getElementById("entry-form").reset();
-    document.getElementById("entry-date").value = date;
+    document.getElementById("entry-spxid").value = "";
+    document.getElementById("entry-cod").value = "0";
+    document.getElementById("entry-spxid").focus();
   }).catch((err) => {
-    alert("Gagal menyimpan data: " + err.message);
+    alert("Gagal menyimpan paket: " + err.message);
   });
 });
 
-// REALTIME REKAP PENGIRIMAN
+// LISTEN REALTIME DATA PAKET
 function listenRealtimeData() {
   db.ref("deliveries").on("value", (snapshot) => {
     const dataObj = snapshot.val() || {};
-    let totalPkgSum = 0;
-    const tableBody = document.getElementById("recap-table-body");
-    tableBody.innerHTML = "";
-
-    const chartData = {};
-
-    const items = Object.keys(dataObj).map(key => ({
+    
+    allDeliveries = Object.keys(dataObj).map(key => ({
       id: key,
       ...dataObj[key]
-    })).sort((a, b) => new Date(b.date) - new Date(a.date));
+    })).sort((a, b) => b.timestamp - a.timestamp);
 
-    items.forEach((item) => {
-      const courierPay = (item.standard * 2500) + (item.far * 2800) + (item.heavy * 3000);
-      totalPkgSum += item.totalPkg;
+    renderTablesAndCharts();
+  });
+}
 
-      chartData[item.date] = (chartData[item.date] || 0) + item.totalPkg;
+// FILTER KURIR
+document.getElementById("filter-courier-history").addEventListener("change", () => {
+  renderTablesAndCharts();
+});
 
+// RENDER REKAPITULASI & RIWAYAT
+function renderTablesAndCharts() {
+  const filterVal = document.getElementById("filter-courier-history").value;
+  const summaryBody = document.getElementById("summary-table-body");
+  const recapBody = document.getElementById("recap-table-body");
+
+  summaryBody.innerHTML = "";
+  recapBody.innerHTML = "";
+
+  const courierStats = {};
+  let globalTotalPkg = 0;
+  let globalTotalCod = 0;
+  let globalTotalCourierPay = 0;
+
+  allDeliveries.forEach((item) => {
+    globalTotalPkg++;
+    globalTotalCod += item.codAmount;
+    globalTotalCourierPay += item.courierRate;
+
+    // Agregasi Per Kurir untuk Tabel Ringkasan
+    if (!courierStats[item.courier]) {
+      courierStats[item.courier] = { totalPkg: 0, totalCod: 0, totalPay: 0 };
+    }
+    courierStats[item.courier].totalPkg += 1;
+    courierStats[item.courier].totalCod += item.codAmount;
+    courierStats[item.courier].totalPay += item.courierRate;
+
+    // Render Tabel Detail (Di-filter jika memilih kurir tertentu)
+    if (filterVal === "ALL" || item.courier === filterVal) {
       const tr = document.createElement("tr");
       tr.className = "border-b text-xs";
       tr.innerHTML = `
         <td class="p-2">${item.date}</td>
         <td class="p-2 font-medium">${item.courier}</td>
-        <td class="p-2">${item.standard} / ${item.far} / ${item.heavy} (${item.totalPkg})</td>
-        <td class="p-2">Rp ${courierPay.toLocaleString("id-ID")}</td>
+        <td class="p-2 font-mono text-blue-600 font-bold">${item.spxid}</td>
+        <td class="p-2"><span class="px-1.5 py-0.5 text-[10px] rounded font-bold ${item.type==='BIG'?'bg-red-100 text-red-600':item.type==='JAUH'?'bg-yellow-100 text-yellow-700':'bg-blue-100 text-blue-600'}">${item.type}</span></td>
+        <td class="p-2">Rp ${item.codAmount.toLocaleString("id-ID")}</td>
+        <td class="p-2">Rp ${item.courierRate.toLocaleString("id-ID")}</td>
         <td class="p-2">
           <button onclick="window.deleteEntry('${item.id}')" class="text-red-500 hover:underline">Hapus</button>
         </td>
       `;
-      tableBody.appendChild(tr);
-    });
-
-    const leaderOmset = totalPkgSum * 4000;
-    const assistantFee = leaderOmset * 0.01;
-    const ownerProfit = totalPkgSum * 1300;
-
-    // Isikan nilai sesuai perhitungan
-    document.getElementById("metric-total-pkg").innerText = totalPkgSum.toLocaleString("id-ID");
-    document.getElementById("metric-leader-omset").innerText = `Rp ${leaderOmset.toLocaleString("id-ID")}`;
-    document.getElementById("metric-assistant-fee").innerText = `Rp ${assistantFee.toLocaleString("id-ID")}`;
-    document.getElementById("metric-owner-profit").innerText = `Rp ${ownerProfit.toLocaleString("id-ID")}`;
-
-    renderChart(chartData);
+      recapBody.appendChild(tr);
+    }
   });
+
+  // Render Tabel Ringkasan (Seperti Sheet Kiri Spreadsheet)
+  Object.keys(courierStats).forEach((courierName) => {
+    const stat = courierStats[courierName];
+    const tr = document.createElement("tr");
+    tr.className = "border-b text-xs";
+    tr.innerHTML = `
+      <td class="p-2 font-bold">${courierName}</td>
+      <td class="p-2 text-center font-bold">${stat.totalPkg}</td>
+      <td class="p-2 text-emerald-600 font-semibold">Rp ${stat.totalCod.toLocaleString("id-ID")}</td>
+      <td class="p-2 font-semibold">Rp ${stat.totalPay.toLocaleString("id-ID")}</td>
+    `;
+    summaryBody.appendChild(tr);
+  });
+
+  // Footer Ringkasan
+  document.getElementById("summary-total-pkg").innerText = globalTotalPkg;
+  document.getElementById("summary-total-cod").innerText = `Rp ${globalTotalCod.toLocaleString("id-ID")}`;
+  document.getElementById("summary-total-pay").innerText = `Rp ${globalTotalCourierPay.toLocaleString("id-ID")}`;
+
+  // Metric Cards
+  const leaderOmset = globalTotalPkg * 4000;
+  const assistantFee = leaderOmset * 0.01;
+  const ownerProfit = globalTotalPkg * 1300;
+
+  document.getElementById("metric-total-pkg").innerText = globalTotalPkg;
+  document.getElementById("metric-total-cod").innerText = `Rp ${globalTotalCod.toLocaleString("id-ID")}`;
+  document.getElementById("metric-assistant-fee").innerText = `Rp ${assistantFee.toLocaleString("id-ID")}`;
+  document.getElementById("metric-owner-profit").innerText = `Rp ${ownerProfit.toLocaleString("id-ID")}`;
+
+  renderChart(courierStats);
 }
 
-// HAPUS RIWAYAT PENGIRIMAN
+// HAPUS PAKET
 window.deleteEntry = (id) => {
-  if (confirm("Apakah Anda yakin ingin menghapus data rekap ini?")) {
+  if (confirm("Apakah Anda yakin ingin menghapus paket ini?")) {
     db.ref("deliveries/" + id).remove();
   }
 };
 
-// RENDER CHART
-function renderChart(chartData) {
-  const dates = Object.keys(chartData).reverse();
-  const totals = dates.map(d => chartData[d]);
+// RENDER CHART PER KURIR
+function renderChart(courierStats) {
+  const labels = Object.keys(courierStats);
+  const dataPkg = labels.map(l => courierStats[l].totalPkg);
 
   const ctx = document.getElementById('volumeChart').getContext('2d');
   
@@ -216,19 +276,19 @@ function renderChart(chartData) {
   chartInstance = new Chart(ctx, {
     type: 'bar',
     data: {
-      labels: dates,
+      labels: labels,
       datasets: [{
-        label: 'Volume Paket Terkirim',
-        data: totals,
-        backgroundColor: 'rgba(238, 77, 45, 0.7)',
-        borderColor: 'rgb(238, 77, 45)',
+        label: 'Jumlah Paket Terkirim',
+        data: dataPkg,
+        backgroundColor: 'rgba(59, 130, 246, 0.7)',
+        borderColor: 'rgb(59, 130, 246)',
         borderWidth: 1
       }]
     },
     options: {
       responsive: true,
       scales: {
-        y: { beginAtZero: true }
+        y: { beginAtZero: true, ticks: { precision: 0 } }
       }
     }
   });
