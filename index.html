@@ -52,7 +52,7 @@
           <h3 class="text-lg font-bold mb-4 text-gray-700 border-b pb-2">Input Paket SPX</h3>
           <form id="entry-form" class="space-y-4">
             <div>
-              <label class="block text-xs font-semibold text-gray-600">Tanggal Pengiriman</label>
+              <label class="block text-xs font-semibold text-gray-600">Tanggal Pengiriman Paket</label>
               <input type="date" id="entry-date" required class="w-full border rounded p-2 text-sm">
             </div>
             <div>
@@ -102,6 +102,20 @@
       <!-- KOLOM KANAN: DASHBOARD CARDS, RINGKASAN REKAP & RIWAYAT -->
       <div class="md:col-span-2 space-y-6">
 
+        <!-- FILTER RENTANG TANGGAL REKAP -->
+        <div class="bg-white p-4 rounded-xl shadow flex flex-wrap items-center justify-between gap-4 border-l-4 border-orange-500">
+          <div>
+            <h3 class="text-sm font-bold text-gray-800">Filter Tanggal Laporan</h3>
+            <p class="text-xs text-gray-500">Pilih rentang tanggal untuk menganalisis data rekap</p>
+          </div>
+          <div class="flex flex-wrap items-center gap-2">
+            <input type="date" id="filter-start-date" class="border rounded p-1.5 text-xs">
+            <span class="text-xs text-gray-500 font-bold">s/d</span>
+            <input type="date" id="filter-end-date" class="border rounded p-1.5 text-xs">
+            <button id="reset-date-btn" class="bg-gray-200 text-gray-700 text-xs px-2 py-1.5 rounded hover:bg-gray-300 font-semibold">Reset</button>
+          </div>
+        </div>
+
         <!-- METRIC CARDS -->
         <div class="grid grid-cols-2 sm:grid-cols-4 gap-4" id="metrics-container">
           <div class="bg-white p-4 rounded-xl shadow border-l-4 border-blue-500">
@@ -125,7 +139,7 @@
           </div>
         </div>
 
-        <!-- TABEL REKAPITULASI PER KURIR (SAMA SEPERTI SPREADSHEET ANDA) -->
+        <!-- TABEL REKAPITULASI PER KURIR -->
         <div class="bg-white p-6 rounded-xl shadow overflow-x-auto">
           <h3 class="text-md font-bold mb-4 text-gray-700 border-b pb-2">Ringkasan Pengiriman Per Kurir</h3>
           <table class="w-full text-left text-sm border-collapse">
