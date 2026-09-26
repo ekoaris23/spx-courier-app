@@ -69,18 +69,27 @@
               <label class="block text-xs font-semibold text-gray-600">No Resi (SPXID)</label>
               <input type="text" id="entry-spxid" placeholder="CONTOH: SPXID060185011209" required class="w-full border rounded p-2 text-sm uppercase">
             </div>
+            <div>
+              <label class="block text-xs font-semibold text-gray-600">Tipe Paket</label>
+              <select id="entry-type" class="w-full border rounded p-2 text-sm">
+                <option value="STD">STD (2.5k)</option>
+                <option value="JAUH">JAUH (2.8k)</option>
+                <option value="BIG">BIG / BERAT (3.0k)</option>
+              </select>
+            </div>
             <div class="grid grid-cols-2 gap-2">
-              <div>
-                <label class="block text-xs font-semibold text-gray-600">Tipe Paket</label>
-                <select id="entry-type" class="w-full border rounded p-2 text-sm">
-                  <option value="STD">STD (2.5k)</option>
-                  <option value="JAUH">JAUH (2.8k)</option>
-                  <option value="BIG">BIG / BERAT (3.0k)</option>
-                </select>
-              </div>
               <div>
                 <label class="block text-xs font-semibold text-gray-600">Nominal COD (Rp)</label>
                 <input type="number" id="entry-cod" value="0" min="0" class="w-full border rounded p-2 text-sm" placeholder="0 jika Non-COD">
+              </div>
+              <div>
+                <label class="block text-xs font-semibold text-gray-600">Metode COD</label>
+                <select id="entry-payment-method" class="w-full border rounded p-2 text-sm">
+                  <option value="CASH">CASH</option>
+                  <option value="TRANSFER">TRANSFER</option>
+                  <option value="QRIS">QRIS</option>
+                  <option value="NON-COD">NON-COD</option>
+                </select>
               </div>
             </div>
             <button type="submit" class="w-full bg-green-600 text-white py-2 rounded font-semibold text-sm hover:bg-green-700">+ Tambah Paket</button>
@@ -202,6 +211,7 @@
                 <th class="p-2">SPXID</th>
                 <th class="p-2">Tipe</th>
                 <th class="p-2">Nominal COD</th>
+                <th class="p-2">Metode</th>
                 <th class="p-2">Hak Kurir</th>
                 <th class="p-2">Aksi</th>
               </tr>
@@ -243,6 +253,17 @@
     document.addEventListener("DOMContentLoaded", () => {
       document.getElementById("entry-date").value = todayStr;
       document.getElementById("filter-start-date").value = todayStr;
+    });
+
+    // Otomatis ubah metode pembayaran ke NON-COD jika nominal COD = 0
+    document.getElementById("entry-cod").addEventListener("input", (e) => {
+      const val = parseInt(e.target.value) || 0;
+      const methodSelect = document.getElementById("entry-payment-method");
+      if (val === 0) {
+        methodSelect.value = "NON-COD";
+      } else if (methodSelect.value === "NON-COD") {
+        methodSelect.value = "CASH";
+      }
     });
 
     // Handling Login
@@ -355,7 +376,7 @@
       }
     };
 
-    // SIMPAN PAKET PER RESI (SPXID)
+    // SIMPAN PAKET PER RESI (SPXID) DENGAN CEK DUPLIKASI
     document.getElementById("entry-form").addEventListener("submit", (e) => {
       e.preventDefault();
       const date = document.getElementById("entry-date").value;
@@ -363,9 +384,18 @@
       const spxid = document.getElementById("entry-spxid").value.trim().toUpperCase();
       const type = document.getElementById("entry-type").value;
       const codAmount = parseInt(document.getElementById("entry-cod").value) || 0;
+      const paymentMethod = document.getElementById("entry-payment-method").value;
 
       if (!courier) {
         alert("Silakan pilih kurir terlebih dahulu!");
+        return;
+      }
+
+      // VALIDASI: Cek apakah SPXID sudah ada di database
+      const isDuplicate = allDeliveries.some((item) => item.spxid === spxid);
+      if (isDuplicate) {
+        alert(`Peringatan: Nomor resi ${spxid} tersebut sudah pernah diinput sebelumnya!`);
+        document.getElementById("entry-spxid").focus();
         return;
       }
 
@@ -380,11 +410,13 @@
         spxid,
         type,
         codAmount,
+        paymentMethod,
         courierRate,
         timestamp: Date.now()
       }).then(() => {
         document.getElementById("entry-spxid").value = "";
         document.getElementById("entry-cod").value = "0";
+        document.getElementById("entry-payment-method").value = "NON-COD";
         document.getElementById("entry-spxid").focus();
       }).catch((err) => {
         alert("Gagal menyimpan paket: " + err.message);
@@ -459,12 +491,19 @@
         if (filterCourier === "ALL" || item.courier === filterCourier) {
           const tr = document.createElement("tr");
           tr.className = "border-b text-xs";
+          
+          let methodBadgeClass = "bg-gray-100 text-gray-600";
+          if (item.paymentMethod === "CASH") methodBadgeClass = "bg-emerald-100 text-emerald-700";
+          if (item.paymentMethod === "TRANSFER") methodBadgeClass = "bg-blue-100 text-blue-700";
+          if (item.paymentMethod === "QRIS") methodBadgeClass = "bg-purple-100 text-purple-700";
+
           tr.innerHTML = `
             <td class="p-2">${item.date}</td>
             <td class="p-2 font-medium">${item.courier}</td>
             <td class="p-2 font-mono text-blue-600 font-bold">${item.spxid}</td>
             <td class="p-2"><span class="px-1.5 py-0.5 text-[10px] rounded font-bold ${item.type==='BIG'?'bg-red-100 text-red-600':item.type==='JAUH'?'bg-yellow-100 text-yellow-700':'bg-blue-100 text-blue-600'}">${item.type}</span></td>
             <td class="p-2">Rp ${item.codAmount.toLocaleString("id-ID")}</td>
+            <td class="p-2"><span class="px-1.5 py-0.5 text-[10px] rounded font-bold ${methodBadgeClass}">${item.paymentMethod || 'CASH'}</span></td>
             <td class="p-2">Rp ${item.courierRate.toLocaleString("id-ID")}</td>
             <td class="p-2">
               <button onclick="deleteEntry('${item.id}')" class="text-red-500 hover:underline">Hapus</button>
