@@ -159,32 +159,27 @@
             <span class="text-gray-500 font-bold text-lg md:hidden toggle-icon">v</span>
           </div>
           <div class="card-content grid grid-cols-2 lg:grid-cols-5 gap-3">
-            <!-- 1. Total Paket -->
             <div class="bg-gray-50 p-3 rounded-xl shadow-sm border-l-4 border-blue-500">
               <p class="text-[11px] text-gray-500 font-medium">Total Paket</p>
               <h4 id="metric-total-pkg" class="text-lg font-bold">0</h4>
             </div>
 
-            <!-- 2. Omset Leader -->
             <div class="bg-gray-50 p-3 rounded-xl shadow-sm border-l-4 border-yellow-500">
               <p class="text-[11px] text-gray-500 font-medium">Omset Leader (4k)</p>
               <h4 id="metric-leader-omset" class="text-sm sm:text-base font-bold text-yellow-600">Rp 0</h4>
               <p class="text-[10px] text-gray-400 mt-1">Sisa Bersih: <span id="metric-leader-profit" class="font-bold text-gray-700">Rp 0</span></p>
             </div>
 
-            <!-- 3. Total COD -->
             <div class="bg-gray-50 p-3 rounded-xl shadow-sm border-l-4 border-emerald-500">
               <p class="text-[11px] text-gray-500 font-medium">Total COD</p>
               <h4 id="metric-total-cod" class="text-sm sm:text-base font-bold text-emerald-600">Rp 0</h4>
             </div>
 
-            <!-- 4. Komisi Asisten -->
             <div id="assistant-card-fee" class="bg-gray-50 p-3 rounded-xl shadow-sm border-l-4 border-purple-500 hidden">
               <p class="text-[11px] text-gray-500 font-medium">Komisi Asisten (1%)</p>
               <h4 id="metric-assistant-fee" class="text-sm sm:text-base font-bold text-purple-600">Rp 0</h4>
             </div>
 
-            <!-- 5. Profit Owner -->
             <div id="admin-card-profit" class="bg-gray-50 p-3 rounded-xl shadow-sm border-l-4 border-orange-500 hidden">
               <p class="text-[11px] text-gray-500 font-medium">Profit Owner</p>
               <h4 id="metric-owner-profit" class="text-sm sm:text-base font-bold text-orange-600">Rp 0</h4>
@@ -192,7 +187,7 @@
           </div>
         </div>
 
-        <!-- 2. TABEL REKAPITULASI PER KURIR -->
+        <!-- TABEL REKAPITULASI PER KURIR -->
         <div class="bg-white p-6 rounded-xl shadow overflow-x-auto">
           <h3 class="text-md font-bold mb-4 text-gray-700 border-b pb-2">Ringkasan Pengiriman Per Kurir</h3>
           <table class="w-full text-left text-sm border-collapse">
@@ -229,7 +224,7 @@
           </div>
         </div>
 
-        <!-- RIWAYAT DETAIL PER RESI SPXID -->
+        <!-- RIWAYAT DETAIL PER RESI SPXID DENGAN FITUR EDIT & EDIT MASSAL -->
         <div class="bg-white p-6 rounded-xl shadow overflow-x-auto mobile-collapsible">
           <div class="flex justify-between items-center mb-4 pb-2 border-b cursor-pointer md:cursor-default" onclick="toggleCard(this)">
             <h3 class="text-md font-bold text-gray-700">Detail Paket (Per Resi SPXID)</h3>
@@ -240,10 +235,26 @@
               <span class="text-gray-500 font-bold text-lg md:hidden toggle-icon">v</span>
             </div>
           </div>
+          
           <div class="card-content">
+            <!-- PANEL ACTION EDIT MASSAL -->
+            <div id="bulk-edit-panel" class="bg-orange-50 border border-orange-200 p-3 rounded-lg mb-4 flex flex-wrap items-center justify-between gap-3 text-xs">
+              <div class="flex items-center gap-2">
+                <span class="font-bold text-orange-800"><span id="selected-count">0</span> Paket Dipilih</span>
+              </div>
+              <div class="flex flex-wrap items-center gap-2">
+                <select id="bulk-courier-select" class="border rounded p-1.5 text-xs bg-white">
+                  <option value="">-- Pindah Ke Kurir --</option>
+                </select>
+                <input type="date" id="bulk-date-input" class="border rounded p-1 text-xs bg-white" title="Ubah Tanggal (Opsional)">
+                <button onclick="applyBulkEdit()" class="bg-orange-600 text-white px-3 py-1.5 rounded font-bold hover:bg-orange-700">Terapkan Ubah Massal</button>
+              </div>
+            </div>
+
             <table class="w-full text-left text-sm border-collapse">
               <thead>
                 <tr class="bg-gray-100 border-b text-xs text-gray-600 uppercase">
+                  <th class="p-2"><input type="checkbox" id="select-all-checkbox" onclick="selectAllPackages(this)"></th>
                   <th class="p-2">Tgl</th>
                   <th class="p-2">Kurir</th>
                   <th class="p-2">SPXID</th>
@@ -261,6 +272,57 @@
           </div>
         </div>
 
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL EDIT SATUAN -->
+  <div id="edit-modal" class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+    <div class="bg-white rounded-xl p-6 w-full max-w-md shadow-xl">
+      <h3 class="text-lg font-bold text-gray-800 mb-4 border-b pb-2">Edit Data Paket SPX</h3>
+      <input type="hidden" id="edit-id">
+      <div class="space-y-3 text-xs">
+        <div>
+          <label class="block font-semibold mb-1">Tanggal Pengiriman</label>
+          <input type="date" id="edit-date" class="w-full border rounded p-2">
+        </div>
+        <div>
+          <label class="block font-semibold mb-1">Pilih Kurir</label>
+          <select id="edit-courier" class="w-full border rounded p-2">
+            <!-- Filled via JS -->
+          </select>
+        </div>
+        <div>
+          <label class="block font-semibold mb-1">No Resi (SPXID)</label>
+          <input type="text" id="edit-spxid" class="w-full border rounded p-2 uppercase">
+        </div>
+        <div>
+          <label class="block font-semibold mb-1">Tipe Paket</label>
+          <select id="edit-type" class="w-full border rounded p-2">
+            <option value="STD">STD (2.5k)</option>
+            <option value="JAUH">JAUH (2.8k)</option>
+            <option value="BIG">BIG / BERAT (3.0k)</option>
+          </select>
+        </div>
+        <div class="grid grid-cols-2 gap-2">
+          <div>
+            <label class="block font-semibold mb-1">Nominal COD (Rp)</label>
+            <input type="number" id="edit-cod" class="w-full border rounded p-2">
+          </div>
+          <div>
+            <label class="block font-semibold mb-1">Metode COD</label>
+            <select id="edit-payment-method" class="w-full border rounded p-2">
+              <option value="CASH">CASH</option>
+              <option value="TRANSFER">TRANSFER</option>
+              <option value="QRIS">QRIS</option>
+              <option value="NON-COD">NON-COD</option>
+            </select>
+          </div>
+        </div>
+      </div>
+      <div class="flex justify-end gap-2 mt-6">
+        <button onclick="closeEditModal()" class="px-4 py-2 bg-gray-200 text-gray-700 rounded font-semibold text-xs hover:bg-gray-300">Batal</button>
+        <button onclick="saveSingleEdit()" class="px-4 py-2 bg-blue-600 text-white rounded font-semibold text-xs hover:bg-blue-700">Simpan Perubahan</button>
       </div>
     </div>
   </div>
@@ -292,6 +354,7 @@
     let currentRole = null;
     let chartInstance = null;
     let allDeliveries = [];
+    let selectedPackageIds = new Set();
 
     const todayStr = new Date().toISOString().split('T')[0];
 
@@ -363,9 +426,13 @@
         const courierSelect = document.getElementById("entry-courier");
         const courierFilter = document.getElementById("filter-courier-history");
         const courierList = document.getElementById("courier-list");
+        const bulkCourierSelect = document.getElementById("bulk-courier-select");
+        const editCourierSelect = document.getElementById("edit-courier");
 
         courierSelect.innerHTML = "";
         courierFilter.innerHTML = `<option value="ALL">-- Semua Kurir --</option>`;
+        bulkCourierSelect.innerHTML = `<option value="">-- Pindah Ke Kurir --</option>`;
+        editCourierSelect.innerHTML = "";
         courierList.innerHTML = "";
 
         const keys = Object.keys(couriersObj);
@@ -379,15 +446,10 @@
         keys.forEach((key) => {
           const name = couriersObj[key].name;
 
-          const opt = document.createElement("option");
-          opt.value = name;
-          opt.innerText = name;
-          courierSelect.appendChild(opt);
-
-          const optFilter = document.createElement("option");
-          optFilter.value = name;
-          optFilter.innerText = name;
-          courierFilter.appendChild(optFilter);
+          const opt1 = document.createElement("option"); opt1.value = name; opt1.innerText = name; courierSelect.appendChild(opt1);
+          const opt2 = document.createElement("option"); opt2.value = name; opt2.innerText = name; courierFilter.appendChild(opt2);
+          const opt3 = document.createElement("option"); opt3.value = name; opt3.innerText = name; bulkCourierSelect.appendChild(opt3);
+          const opt4 = document.createElement("option"); opt4.value = name; opt4.innerText = name; editCourierSelect.appendChild(opt4);
 
           const li = document.createElement("li");
           li.className = "flex justify-between items-center bg-white p-2 rounded border";
@@ -420,7 +482,7 @@
       }
     };
 
-    // SIMPAN PAKET PER RESI (SPXID) DENGAN PENYESUAIAN SKEMA KURIR EKO / ROBI / LAINNYA
+    // SIMPAN PAKET PER RESI (SPXID)
     document.getElementById("entry-form").addEventListener("submit", (e) => {
       e.preventDefault();
       const date = document.getElementById("entry-date").value;
@@ -446,7 +508,6 @@
       const courierLower = courier.toLowerCase();
 
       if (courierLower === "eko" || courierLower === "robi") {
-        // Eko (Owner) & Robi (Leader) tidak menerima hak komisi kurir standar
         courierRate = 0;
       } else {
         if (type === "STD") courierRate = 2500;
@@ -498,7 +559,7 @@
       renderTablesAndCharts();
     });
 
-    // LOGIKA PERHITUNGAN BARU (EKO: OWNER, ROBI: LEADER, LAINNYA: KURIR)
+    // RENDER REKAP
     function renderTablesAndCharts() {
       const startDate = document.getElementById("filter-start-date").value;
       const endDate = document.getElementById("filter-end-date").value;
@@ -538,18 +599,14 @@
 
         const courierLower = item.courier.toLowerCase();
 
-        // Hitung Pembagian Omset & Profit berdasarkan Pengirim Paket
         if (courierLower === "eko") {
-          // Eko (Owner): Full 5300 milik Owner. Tidak ada bagian untuk Leader/Asisten/Kurir
           ownerProfitTotal += 5300;
         } else if (courierLower === "robi") {
-          // Robi (Leader): Leader dapat 4000 full. Owner dapat 1300. Asisten 1% (40) dari 1300
           leaderOmsetTotal += 4000;
           leaderNetProfitTotal += 4000;
           assistantFeeTotal += 40;
           ownerProfitTotal += (1300 - 40);
         } else {
-          // Kurir Biasa: Leader dapat 4000 (dikurangi komisi kurir). Owner 1300. Asisten 1% (40)
           leaderOmsetTotal += 4000;
           leaderNetProfitTotal += (4000 - item.courierRate);
           assistantFeeTotal += 40;
@@ -565,14 +622,17 @@
 
         if (filterCourier === "ALL" || item.courier === filterCourier) {
           const tr = document.createElement("tr");
-          tr.className = "border-b text-xs";
+          tr.className = "border-b text-xs hover:bg-orange-50/50";
           
           let methodBadgeClass = "bg-gray-100 text-gray-600";
           if (item.paymentMethod === "CASH") methodBadgeClass = "bg-emerald-100 text-emerald-700";
           if (item.paymentMethod === "TRANSFER") methodBadgeClass = "bg-blue-100 text-blue-700";
           if (item.paymentMethod === "QRIS") methodBadgeClass = "bg-purple-100 text-purple-700";
 
+          const isChecked = selectedPackageIds.has(item.id) ? 'checked' : '';
+
           tr.innerHTML = `
+            <td class="p-2"><input type="checkbox" class="pkg-checkbox" value="${item.id}" ${isChecked} onchange="toggleSelectPackage('${item.id}', this.checked)"></td>
             <td class="p-2">${item.date}</td>
             <td class="p-2 font-medium">${item.courier}</td>
             <td class="p-2 font-mono text-blue-600 font-bold">${item.spxid}</td>
@@ -580,7 +640,8 @@
             <td class="p-2">Rp ${item.codAmount.toLocaleString("id-ID")}</td>
             <td class="p-2"><span class="px-1.5 py-0.5 text-[10px] rounded font-bold ${methodBadgeClass}">${item.paymentMethod || 'CASH'}</span></td>
             <td class="p-2">Rp ${item.courierRate.toLocaleString("id-ID")}</td>
-            <td class="p-2">
+            <td class="p-2 space-x-1">
+              <button onclick="openEditModal('${item.id}')" class="text-blue-600 hover:underline font-semibold">Edit</button>
               <button onclick="deleteEntry('${item.id}')" class="text-red-500 hover:underline">Hapus</button>
             </td>
           `;
@@ -605,7 +666,6 @@
       document.getElementById("summary-total-cod").innerText = `Rp ${globalTotalCod.toLocaleString("id-ID")}`;
       document.getElementById("summary-total-pay").innerText = `Rp ${globalTotalCourierPay.toLocaleString("id-ID")}`;
 
-      // Update Kartu Metrik dengan perhitungan baru
       document.getElementById("metric-total-pkg").innerText = globalTotalPkg;
       document.getElementById("metric-leader-omset").innerText = `Rp ${leaderOmsetTotal.toLocaleString("id-ID")}`;
       document.getElementById("metric-leader-profit").innerText = `Rp ${leaderNetProfitTotal.toLocaleString("id-ID")}`;
@@ -613,8 +673,134 @@
       document.getElementById("metric-assistant-fee").innerText = `Rp ${assistantFeeTotal.toLocaleString("id-ID")}`;
       document.getElementById("metric-owner-profit").innerText = `Rp ${ownerProfitTotal.toLocaleString("id-ID")}`;
 
+      updateSelectedCount();
       renderChart(courierStats);
     }
+
+    // CHECKBOX SELECTION FOR BULK EDIT
+    function toggleSelectPackage(id, isChecked) {
+      if (isChecked) {
+        selectedPackageIds.add(id);
+      } else {
+        selectedPackageIds.delete(id);
+      }
+      updateSelectedCount();
+    }
+
+    function selectAllPackages(masterCheckbox) {
+      const checkboxes = document.querySelectorAll('.pkg-checkbox');
+      checkboxes.forEach(cb => {
+        cb.checked = masterCheckbox.checked;
+        if (masterCheckbox.checked) {
+          selectedPackageIds.add(cb.value);
+        } else {
+          selectedPackageIds.delete(cb.value);
+        }
+      });
+      updateSelectedCount();
+    }
+
+    function updateSelectedCount() {
+      document.getElementById("selected-count").innerText = selectedPackageIds.size;
+    }
+
+    // Terapkan Edit Massal
+    window.applyBulkEdit = () => {
+      if (selectedPackageIds.size === 0) {
+        alert("Pilih/centang minimal satu paket yang ingin diubah!");
+        return;
+      }
+
+      const newCourier = document.getElementById("bulk-courier-select").value;
+      const newDate = document.getElementById("bulk-date-input").value;
+
+      if (!newCourier && !newDate) {
+        alert("Pilih Kurir Baru atau Tanggal Baru yang ingin diterapkan!");
+        return;
+      }
+
+      if (confirm(`Apakah Anda yakin ingin memperbarui ${selectedPackageIds.size} paket yang dipilih?`)) {
+        const updates = {};
+        selectedPackageIds.forEach(id => {
+          const item = allDeliveries.find(d => d.id === id);
+          if (item) {
+            const courierToSet = newCourier || item.courier;
+            const dateToSet = newDate || item.date;
+
+            let courierRate = 0;
+            const courierLower = courierToSet.toLowerCase();
+            if (courierLower !== "eko" && courierLower !== "robi") {
+              if (item.type === "STD") courierRate = 2500;
+              if (item.type === "JAUH") courierRate = 2800;
+              if (item.type === "BIG") courierRate = 3000;
+            }
+
+            updates[`deliveries/${id}/courier`] = courierToSet;
+            updates[`deliveries/${id}/date`] = dateToSet;
+            updates[`deliveries/${id}/courierRate`] = courierRate;
+          }
+        });
+
+        db.ref().update(updates).then(() => {
+          alert("Berhasil mengupdate data paket terpilih!");
+          selectedPackageIds.clear();
+          document.getElementById("select-all-checkbox").checked = false;
+          document.getElementById("bulk-courier-select").value = "";
+          document.getElementById("bulk-date-input").value = "";
+        }).catch(err => alert("Gagal update massal: " + err.message));
+      }
+    };
+
+    // EDIT SATUAN MODAL
+    window.openEditModal = (id) => {
+      const item = allDeliveries.find(d => d.id === id);
+      if (!item) return;
+
+      document.getElementById("edit-id").value = id;
+      document.getElementById("edit-date").value = item.date;
+      document.getElementById("edit-courier").value = item.courier;
+      document.getElementById("edit-spxid").value = item.spxid;
+      document.getElementById("edit-type").value = item.type;
+      document.getElementById("edit-cod").value = item.codAmount;
+      document.getElementById("edit-payment-method").value = item.paymentMethod || "CASH";
+
+      document.getElementById("edit-modal").classList.remove("hidden");
+    };
+
+    window.closeEditModal = () => {
+      document.getElementById("edit-modal").classList.add("hidden");
+    };
+
+    window.saveSingleEdit = () => {
+      const id = document.getElementById("edit-id").value;
+      const date = document.getElementById("edit-date").value;
+      const courier = document.getElementById("edit-courier").value;
+      const spxid = document.getElementById("edit-spxid").value.trim().toUpperCase();
+      const type = document.getElementById("edit-type").value;
+      const codAmount = parseInt(document.getElementById("edit-cod").value) || 0;
+      const paymentMethod = document.getElementById("edit-payment-method").value;
+
+      let courierRate = 0;
+      const courierLower = courier.toLowerCase();
+      if (courierLower !== "eko" && courierLower !== "robi") {
+        if (type === "STD") courierRate = 2500;
+        if (type === "JAUH") courierRate = 2800;
+        if (type === "BIG") courierRate = 3000;
+      }
+
+      db.ref("deliveries/" + id).update({
+        date,
+        courier,
+        spxid,
+        type,
+        codAmount,
+        paymentMethod,
+        courierRate
+      }).then(() => {
+        alert("Data paket berhasil diperbarui!");
+        closeEditModal();
+      }).catch(err => alert("Gagal memperbarui data: " + err.message));
+    };
 
     // HAPUS PAKET
     window.deleteEntry = (id) => {
