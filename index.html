@@ -12,7 +12,6 @@
   <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-database-compat.js"></script>
   
   <style>
-    /* Styling tambahan untuk tombol collapse di mobile */
     @media (max-width: 768px) {
       .mobile-collapsible .card-content {
         display: none;
@@ -71,7 +70,7 @@
       <!-- KOLOM KIRI: FORM INPUT & KELOLA KURIR -->
       <div class="md:col-span-1 space-y-6">
         
-        <!-- 1. FORM INPUT PER PAKET (SPXID) - TIDAK BISA DI-COLLAPSE -->
+        <!-- 1. FORM INPUT PER PAKET (SPXID) -->
         <div class="bg-white p-6 rounded-xl shadow">
           <h3 class="text-lg font-bold mb-4 text-gray-700 border-b pb-2">Input Paket SPX</h3>
           <form id="entry-form" class="space-y-4">
@@ -116,7 +115,7 @@
           </form>
         </div>
 
-        <!-- FORM KELOLA KURIR (BISA COLLAPSE DI MOBILE) -->
+        <!-- FORM KELOLA KURIR -->
         <div class="bg-white p-6 rounded-xl shadow mobile-collapsible">
           <div class="flex justify-between items-center cursor-pointer md:cursor-default border-b pb-2 mb-4" onclick="toggleCard(this)">
             <h3 class="text-lg font-bold text-gray-700">Kelola Daftar Kurir</h3>
@@ -139,7 +138,7 @@
       <!-- KOLOM KANAN: DASHBOARD CARDS, RINGKASAN REKAP & RIWAYAT -->
       <div class="md:col-span-2 space-y-6">
 
-        <!-- FILTER RENTANG TANGGAL LAPORAN - TIDAK BISA DI-COLLAPSE -->
+        <!-- FILTER RENTANG TANGGAL LAPORAN -->
         <div class="bg-white p-4 rounded-xl shadow flex flex-wrap items-center justify-between gap-4 border-l-4 border-orange-500">
           <div>
             <h3 class="text-sm font-bold text-gray-800">Filter Tanggal Laporan</h3>
@@ -153,7 +152,7 @@
           </div>
         </div>
 
-        <!-- METRIC CARDS (5 KARTU - BISA COLLAPSE DI MOBILE) -->
+        <!-- METRIC CARDS (5 KARTU) -->
         <div class="bg-white p-4 rounded-xl shadow mobile-collapsible">
           <div class="flex justify-between items-center cursor-pointer md:cursor-default border-b pb-2 mb-3" onclick="toggleCard(this)">
             <h3 class="text-md font-bold text-gray-700">Ringkasan Metrik & Statistik</h3>
@@ -187,13 +186,13 @@
 
             <!-- 5. Profit Owner -->
             <div id="admin-card-profit" class="bg-gray-50 p-3 rounded-xl shadow-sm border-l-4 border-orange-500 hidden">
-              <p class="text-[11px] text-gray-500 font-medium">Profit Owner (1.3k)</p>
+              <p class="text-[11px] text-gray-500 font-medium">Profit Owner</p>
               <h4 id="metric-owner-profit" class="text-sm sm:text-base font-bold text-orange-600">Rp 0</h4>
             </div>
           </div>
         </div>
 
-        <!-- 2. TABEL REKAPITULASI PER KURIR - TIDAK BISA DI-COLLAPSE -->
+        <!-- 2. TABEL REKAPITULASI PER KURIR -->
         <div class="bg-white p-6 rounded-xl shadow overflow-x-auto">
           <h3 class="text-md font-bold mb-4 text-gray-700 border-b pb-2">Ringkasan Pengiriman Per Kurir</h3>
           <table class="w-full text-left text-sm border-collapse">
@@ -219,7 +218,7 @@
           </table>
         </div>
 
-        <!-- CHARTS (BISA COLLAPSE DI MOBILE) -->
+        <!-- CHARTS -->
         <div class="bg-white p-6 rounded-xl shadow mobile-collapsible">
           <div class="flex justify-between items-center cursor-pointer md:cursor-default border-b pb-2 mb-4" onclick="toggleCard(this)">
             <h3 class="text-md font-bold text-gray-700">Grafik Jumlah Paket Per Kurir</h3>
@@ -230,7 +229,7 @@
           </div>
         </div>
 
-        <!-- RIWAYAT DETAIL PER RESI SPXID (BISA COLLAPSE DI MOBILE) -->
+        <!-- RIWAYAT DETAIL PER RESI SPXID -->
         <div class="bg-white p-6 rounded-xl shadow overflow-x-auto mobile-collapsible">
           <div class="flex justify-between items-center mb-4 pb-2 border-b cursor-pointer md:cursor-default" onclick="toggleCard(this)">
             <h3 class="text-md font-bold text-gray-700">Detail Paket (Per Resi SPXID)</h3>
@@ -268,7 +267,6 @@
 
   <!-- SCRIPT APLIKASI TUNGGAL -->
   <script>
-    // Fungsi untuk memperkecil/membuka card di mobile
     function toggleCard(headerElement) {
       if (window.innerWidth <= 768) {
         const parentCard = headerElement.closest('.mobile-collapsible');
@@ -276,7 +274,6 @@
       }
     }
 
-    // Konfigurasi Firebase bawaan Anda
     const firebaseConfig = {
       apiKey: "AIzaSyBDQ_MP1QFVA0PFvQck8E3MxG1vDbOcizI",
       authDomain: "spx-paket-gaskeun.firebaseapp.com",
@@ -423,7 +420,7 @@
       }
     };
 
-    // SIMPAN PAKET PER RESI (SPXID) DENGAN CEK DUPLIKASI
+    // SIMPAN PAKET PER RESI (SPXID) DENGAN PENYESUAIAN SKEMA KURIR EKO / ROBI / LAINNYA
     document.getElementById("entry-form").addEventListener("submit", (e) => {
       e.preventDefault();
       const date = document.getElementById("entry-date").value;
@@ -445,9 +442,17 @@
         return;
       }
 
-      let courierRate = 2500;
-      if (type === "JAUH") courierRate = 2800;
-      if (type === "BIG") courierRate = 3000;
+      let courierRate = 0;
+      const courierLower = courier.toLowerCase();
+
+      if (courierLower === "eko" || courierLower === "robi") {
+        // Eko (Owner) & Robi (Leader) tidak menerima hak komisi kurir standar
+        courierRate = 0;
+      } else {
+        if (type === "STD") courierRate = 2500;
+        if (type === "JAUH") courierRate = 2800;
+        if (type === "BIG") courierRate = 3000;
+      }
 
       const newRef = db.ref("deliveries").push();
       newRef.set({
@@ -493,7 +498,7 @@
       renderTablesAndCharts();
     });
 
-    // LOGIKA RENDER REKAP
+    // LOGIKA PERHITUNGAN BARU (EKO: OWNER, ROBI: LEADER, LAINNYA: KURIR)
     function renderTablesAndCharts() {
       const startDate = document.getElementById("filter-start-date").value;
       const endDate = document.getElementById("filter-end-date").value;
@@ -510,6 +515,11 @@
       let globalTotalCod = 0;
       let globalTotalCourierPay = 0;
 
+      let leaderOmsetTotal = 0;
+      let leaderNetProfitTotal = 0;
+      let assistantFeeTotal = 0;
+      let ownerProfitTotal = 0;
+
       const filteredDeliveries = allDeliveries.filter((item) => {
         if (startDate && endDate) {
           return item.date >= startDate && item.date <= endDate;
@@ -525,6 +535,26 @@
         globalTotalPkg++;
         globalTotalCod += item.codAmount;
         globalTotalCourierPay += item.courierRate;
+
+        const courierLower = item.courier.toLowerCase();
+
+        // Hitung Pembagian Omset & Profit berdasarkan Pengirim Paket
+        if (courierLower === "eko") {
+          // Eko (Owner): Full 5300 milik Owner. Tidak ada bagian untuk Leader/Asisten/Kurir
+          ownerProfitTotal += 5300;
+        } else if (courierLower === "robi") {
+          // Robi (Leader): Leader dapat 4000 full. Owner dapat 1300. Asisten 1% (40) dari 1300
+          leaderOmsetTotal += 4000;
+          leaderNetProfitTotal += 4000;
+          assistantFeeTotal += 40;
+          ownerProfitTotal += (1300 - 40);
+        } else {
+          // Kurir Biasa: Leader dapat 4000 (dikurangi komisi kurir). Owner 1300. Asisten 1% (40)
+          leaderOmsetTotal += 4000;
+          leaderNetProfitTotal += (4000 - item.courierRate);
+          assistantFeeTotal += 40;
+          ownerProfitTotal += (1300 - 40);
+        }
 
         if (!courierStats[item.courier]) {
           courierStats[item.courier] = { totalPkg: 0, totalCod: 0, totalPay: 0 };
@@ -575,17 +605,13 @@
       document.getElementById("summary-total-cod").innerText = `Rp ${globalTotalCod.toLocaleString("id-ID")}`;
       document.getElementById("summary-total-pay").innerText = `Rp ${globalTotalCourierPay.toLocaleString("id-ID")}`;
 
-      const leaderOmset = globalTotalPkg * 4000;
-      const assistantFee = leaderOmset * 0.01;
-      const leaderNetProfit = leaderOmset - globalTotalCourierPay - assistantFee;
-      const ownerProfit = globalTotalPkg * 1300;
-
+      // Update Kartu Metrik dengan perhitungan baru
       document.getElementById("metric-total-pkg").innerText = globalTotalPkg;
-      document.getElementById("metric-leader-omset").innerText = `Rp ${leaderOmset.toLocaleString("id-ID")}`;
-      document.getElementById("metric-leader-profit").innerText = `Rp ${leaderNetProfit.toLocaleString("id-ID")}`;
+      document.getElementById("metric-leader-omset").innerText = `Rp ${leaderOmsetTotal.toLocaleString("id-ID")}`;
+      document.getElementById("metric-leader-profit").innerText = `Rp ${leaderNetProfitTotal.toLocaleString("id-ID")}`;
       document.getElementById("metric-total-cod").innerText = `Rp ${globalTotalCod.toLocaleString("id-ID")}`;
-      document.getElementById("metric-assistant-fee").innerText = `Rp ${assistantFee.toLocaleString("id-ID")}`;
-      document.getElementById("metric-owner-profit").innerText = `Rp ${ownerProfit.toLocaleString("id-ID")}`;
+      document.getElementById("metric-assistant-fee").innerText = `Rp ${assistantFeeTotal.toLocaleString("id-ID")}`;
+      document.getElementById("metric-owner-profit").innerText = `Rp ${ownerProfitTotal.toLocaleString("id-ID")}`;
 
       renderChart(courierStats);
     }
