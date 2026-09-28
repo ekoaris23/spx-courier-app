@@ -373,14 +373,14 @@
       }
     });
 
-    // Handling Login
+    // Handling Login dengan Password Admin Baru (123123)
     document.getElementById("login-form").addEventListener("submit", (e) => {
       e.preventDefault();
       const role = document.getElementById("login-role").value;
       const pass = document.getElementById("login-password").value;
 
       let valid = false;
-      if (role === "admin" && pass === "admin123") valid = true;
+      if (role === "admin" && pass === "123123") valid = true; // Password Owner/Admin = 123123
       if (role === "assistant" && pass === "asisten123") valid = true;
       if (role === "leader" && pass === "leader123") valid = true;
 
@@ -704,7 +704,7 @@
       document.getElementById("selected-count").innerText = selectedPackageIds.size;
     }
 
-    // Terapkan Edit Massal
+    // TERAPKAN EDIT MASSAL
     window.applyBulkEdit = () => {
       if (selectedPackageIds.size === 0) {
         alert("Pilih/centang minimal satu paket yang ingin diubah!");
